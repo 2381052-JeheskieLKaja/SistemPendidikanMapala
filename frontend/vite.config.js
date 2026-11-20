@@ -7,8 +7,9 @@ export default defineConfig(({ mode }) => {
   return {
     plugins: [react(), tailwindcss()],
     server: {
-      port: 5180,
-      strictPort: true,
+      host: '0.0.0.0',
+      port: 3000,
+      allowedHosts: true,
       // Request /api diteruskan ke backend Express sehingga browser cukup memanggil origin yang sama.
       proxy: { '/api': { target: env.VITE_API_TARGET || 'http://localhost:4100', changeOrigin: true } },
     },

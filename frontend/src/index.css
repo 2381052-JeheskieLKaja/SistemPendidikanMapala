@@ -1,40 +1,105 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-sans: "Poppins", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 }
 
 @layer base {
+  html {
+    color-scheme: light;
+  }
+  html.dark {
+    color-scheme: dark;
+  }
   body {
-    @apply bg-stone-50 text-stone-800 antialiased;
+    @apply bg-stone-50 font-sans text-[15px] leading-relaxed font-normal text-stone-800 antialiased
+      transition-[background-color,color] duration-250 ease-out
+      selection:bg-emerald-100 selection:text-emerald-950
+      dark:bg-[#171717] dark:text-[#F2F2F2] dark:selection:bg-emerald-900/50 dark:selection:text-[#F2F2F2];
+  }
+  h1 {
+    @apply font-bold tracking-tight text-stone-900 dark:text-[#F2F2F2];
+  }
+  h2, h3 {
+    @apply font-semibold tracking-tight text-stone-900 dark:text-[#F2F2F2];
+  }
+  h4 {
+    @apply font-medium tracking-tight text-stone-800 dark:text-[#F2F2F2];
   }
 }
 
 @layer components {
   .btn, .btn-primary, .btn-secondary, .btn-danger, .btn-ghost {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg px-3.5 py-2 text-sm font-medium transition
-      disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600;
+    @apply inline-flex cursor-pointer items-center justify-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium whitespace-nowrap shrink-0
+      transition-all duration-150 ease-out active:translate-y-px active:scale-[0.99]
+      disabled:cursor-not-allowed disabled:opacity-60 disabled:shadow-none disabled:active:translate-y-0 disabled:active:scale-100
+      focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-emerald-600 dark:focus-visible:outline-emerald-500
+      motion-reduce:transition-none motion-reduce:transform-none;
   }
-  .btn-primary { @apply bg-emerald-700 text-white hover:bg-emerald-800; }
-  .btn-secondary { @apply border border-stone-300 bg-white text-stone-700 hover:bg-stone-100; }
-  .btn-danger { @apply bg-red-600 text-white hover:bg-red-700; }
-  .btn-ghost { @apply text-stone-600 hover:bg-stone-100; }
+  .btn-primary {
+    @apply bg-gradient-to-b from-emerald-700 to-emerald-800 text-white
+      shadow-[0_1px_2px_rgba(6,78,59,0.22),inset_0_1px_0_rgba(255,255,255,0.14)]
+      hover:from-emerald-700 hover:to-emerald-900 hover:shadow-[0_4px_10px_-2px_rgba(6,78,59,0.28),inset_0_1px_0_rgba(255,255,255,0.16)]
+      active:from-emerald-800 active:to-emerald-950
+      dark:from-emerald-600 dark:to-emerald-700 dark:text-[#F2F2F2] dark:shadow-[0_1px_3px_rgba(0,0,0,0.45),inset_0_1px_0_rgba(255,255,255,0.12)]
+      dark:hover:from-emerald-500 dark:hover:to-emerald-700 dark:hover:shadow-[0_4px_12px_-2px_rgba(0,0,0,0.5)]
+      dark:active:from-emerald-700 dark:active:to-emerald-800;
+  }
+  .btn-secondary {
+    @apply border border-stone-300/90 bg-gradient-to-b from-white to-stone-50/90 text-stone-700
+      shadow-[0_1px_2px_rgba(28,25,23,0.05),inset_0_1px_0_rgba(255,255,255,0.9)]
+      hover:border-stone-400/80 hover:from-stone-50 hover:to-stone-100/80 hover:text-stone-900
+      active:from-stone-100 active:to-stone-100
+      dark:border-[#383838] dark:from-[#2B2B2B] dark:to-[#242424] dark:text-[#F2F2F2]
+      dark:shadow-[0_1px_2px_rgba(0,0,0,0.35),inset_0_1px_0_rgba(255,255,255,0.04)]
+      dark:hover:border-[#4A4A4A] dark:hover:from-[#333333] dark:hover:to-[#2B2B2B] dark:hover:text-white
+      dark:active:from-[#2B2B2B] dark:active:to-[#2B2B2B];
+  }
+  .btn-danger {
+    @apply bg-gradient-to-b from-red-600 to-red-700 text-white
+      shadow-[0_1px_2px_rgba(127,29,29,0.22),inset_0_1px_0_rgba(255,255,255,0.14)]
+      hover:from-red-700 hover:to-red-800 hover:shadow-[0_4px_10px_-2px_rgba(127,29,29,0.26)]
+      active:from-red-800 active:to-red-900;
+  }
+  .btn-ghost {
+    @apply text-stone-600 hover:bg-stone-100/90 hover:text-stone-900 active:bg-stone-200/70
+      dark:text-[#A3A3A3] dark:hover:bg-[#2B2B2B] dark:hover:text-[#F2F2F2] dark:active:bg-[#333333];
+  }
   /* didefinisikan setelah varian di atas agar ukuran kecil menimpa padding default */
-  .btn-sm { @apply px-2.5 py-1 text-xs; }
+  .btn-sm { @apply px-2.5 py-1.5 text-xs; }
 
   .input {
-    @apply block w-full rounded-lg border border-stone-300 bg-white px-3 py-2 text-sm shadow-xs
-      placeholder:text-stone-400 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/20 focus:outline-none
-      disabled:bg-stone-100;
+    @apply block w-full rounded-lg border border-stone-300/90 bg-white px-3 py-2 text-sm text-stone-900
+      shadow-[0_1px_2px_rgba(28,25,23,0.03)] transition-[background-color,border-color,color,box-shadow] duration-200
+      placeholder:text-stone-400 hover:border-stone-400/80 focus:border-emerald-600 focus:ring-2 focus:ring-emerald-600/15 focus:outline-none
+      disabled:bg-stone-100 disabled:text-stone-500 disabled:shadow-none
+      dark:border-[#383838] dark:bg-[#1C1C1C] dark:text-[#F2F2F2] dark:shadow-[0_1px_2px_rgba(0,0,0,0.25)]
+      dark:placeholder:text-[#737373] dark:hover:border-[#4A4A4A] dark:focus:border-emerald-500 dark:focus:ring-emerald-500/20
+      dark:disabled:bg-[#242424] dark:disabled:text-[#737373];
   }
-  .input-error { @apply border-red-500 focus:border-red-500 focus:ring-red-500/20; }
-  .label { @apply mb-1 block text-sm font-medium text-stone-700; }
+  .input-error { @apply border-red-500 focus:border-red-500 focus:ring-red-500/20 dark:border-red-500/80 dark:focus:border-red-400; }
+  .label { @apply mb-1.5 block text-sm font-medium text-stone-700 dark:text-[#F2F2F2]; }
 
-  .card { @apply rounded-xl border border-stone-200 bg-white shadow-xs; }
+  .card {
+    @apply rounded-xl border border-stone-200/85 bg-white shadow-[0_1px_3px_rgba(28,25,23,0.04),0_1px_2px_rgba(28,25,23,0.02)]
+      transition-[background-color,border-color,box-shadow] duration-250
+      dark:border-[#383838] dark:bg-[#242424] dark:shadow-[0_2px_8px_rgba(0,0,0,0.32),0_1px_2px_rgba(0,0,0,0.24)];
+  }
 
   .table { @apply w-full text-left text-sm; }
-  .table th { @apply border-b border-stone-200 bg-stone-50 px-3 py-2.5 text-xs font-semibold tracking-wide text-stone-500 uppercase; }
-  .table td { @apply border-b border-stone-100 px-3 py-2.5 align-middle; }
+  .table th {
+    @apply border-b border-stone-200/90 bg-gradient-to-b from-stone-50 to-stone-100/60 px-4 py-3 text-[11px] font-semibold tracking-wider text-stone-500 uppercase whitespace-nowrap
+      transition-[background-color,border-color,color] duration-250
+      dark:border-[#383838] dark:from-[#2B2B2B] dark:to-[#242424] dark:text-[#A3A3A3];
+  }
+  .table td {
+    @apply border-b border-stone-100/90 px-4 py-3.5 align-middle text-stone-700
+      transition-[border-color,color] duration-250
+      dark:border-[#383838]/75 dark:text-[#A3A3A3];
+  }
   .table tbody tr:last-child td { @apply border-b-0; }
-  .table tbody tr:hover { @apply bg-stone-50/70; }
+  .table tbody tr { @apply transition-colors duration-150; }
+  .table tbody tr:hover { @apply bg-stone-50/80 dark:bg-[#2B2B2B]/65; }
 }

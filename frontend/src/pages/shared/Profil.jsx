@@ -80,17 +80,17 @@ export default function Profil() {
             </Card>
 
             <Card title="Akun">
-              <dl className="space-y-3 text-sm">
-                <div className="flex justify-between gap-2"><dt className="text-stone-500">Peran</dt><dd><StatusBadge status={profil.role} /></dd></div>
-                <div className="flex justify-between gap-2"><dt className="text-stone-500">Status</dt><dd><StatusBadge status={profil.status} /></dd></div>
+              <dl className="divide-y divide-stone-100 text-sm dark:divide-[#383838]/75">
+                <div className="flex items-center justify-between gap-2 py-2.5 first:pt-0"><dt className="text-stone-500 dark:text-[#A3A3A3]">Peran</dt><dd><StatusBadge status={profil.role} /></dd></div>
+                <div className="flex items-center justify-between gap-2 py-2.5"><dt className="text-stone-500 dark:text-[#A3A3A3]">Status</dt><dd><StatusBadge status={profil.status} /></dd></div>
                 {profil.role === 'siswa' && (
                   <>
-                    <div className="flex justify-between gap-2"><dt className="text-stone-500">NIM</dt><dd>{profil.nim || '-'}</dd></div>
-                    <div className="flex justify-between gap-2"><dt className="text-stone-500">Keanggotaan</dt><dd><StatusBadge status={profil.status_keanggotaan} /></dd></div>
+                    <div className="flex items-center justify-between gap-2 py-2.5"><dt className="text-stone-500 dark:text-[#A3A3A3]">NIM</dt><dd className="font-mono text-stone-800 tabular-nums dark:text-[#F2F2F2]">{profil.nim || '-'}</dd></div>
+                    <div className="flex items-center justify-between gap-2 py-2.5 last:pb-0"><dt className="text-stone-500 dark:text-[#A3A3A3]">Keanggotaan</dt><dd><StatusBadge status={profil.status_keanggotaan} /></dd></div>
                   </>
                 )}
               </dl>
-              <p className="mt-4 text-xs text-stone-500">Peran, status, dan data keanggotaan hanya dapat diubah oleh Admin.</p>
+              <p className="mt-4 border-t border-stone-100 pt-3 text-xs leading-relaxed text-stone-500 dark:border-[#383838]/75 dark:text-[#737373]">Peran, status, dan data keanggotaan hanya dapat diubah oleh Admin.</p>
             </Card>
 
             <Card title="Ganti password" className="lg:col-span-2">

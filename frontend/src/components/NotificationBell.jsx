@@ -59,35 +59,36 @@ export default function NotificationBell() {
     <div className="relative" ref={ref}>
       <button
         type="button" onClick={() => { setOpen((v) => !v); if (!open) load() }}
-        className="relative rounded-lg p-2 text-stone-600 hover:bg-stone-100" aria-expanded={open}
+        className="relative flex size-9 cursor-pointer items-center justify-center rounded-lg text-stone-600 transition-colors duration-150 hover:bg-stone-100 hover:text-stone-900 focus-visible:outline-2 focus-visible:outline-emerald-600 dark:text-[#A3A3A3] dark:hover:bg-[#2B2B2B] dark:hover:text-[#F2F2F2] dark:focus-visible:outline-emerald-500"
+        aria-expanded={open}
         aria-label={`Notifikasi, ${data.belum_dibaca} belum dibaca`}
       >
-        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="size-5" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden="true">
           <path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
         {data.belum_dibaca > 0 && (
-          <span className="absolute -top-0.5 -right-0.5 flex min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-semibold text-white tabular-nums">
+          <span className="absolute top-0.5 right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-600 px-1 text-[10px] font-semibold leading-none text-white tabular-nums ring-2 ring-white dark:ring-[#1C1C1C]">
             {data.belum_dibaca > 99 ? '99+' : data.belum_dibaca}
           </span>
         )}
       </button>
       {open && (
-        <div className="card absolute right-0 z-40 mt-2 w-[min(22rem,calc(100vw-2rem))] overflow-hidden shadow-lg">
-          <div className="flex items-center justify-between border-b border-stone-100 px-4 py-2.5">
-            <p className="text-sm font-semibold">Notifikasi</p>
-            <span className="text-xs text-stone-500">{data.belum_dibaca} belum dibaca</span>
+        <div className="card absolute right-0 z-40 mt-2 w-[min(23rem,calc(100vw-2rem))] overflow-hidden shadow-[0_14px_34px_-8px_rgba(28,25,23,0.18)] ring-1 ring-stone-950/5 dark:shadow-[0_18px_40px_-8px_rgba(0,0,0,0.65)] dark:ring-[#383838]">
+          <div className="flex items-center justify-between border-b border-stone-200/70 bg-gradient-to-b from-stone-50/80 to-white px-4 py-3 dark:border-[#383838] dark:from-[#2B2B2B] dark:to-[#242424]">
+            <p className="text-sm font-semibold tracking-tight text-stone-900 dark:text-[#F2F2F2]">Notifikasi</p>
+            <span className="text-xs text-stone-500 tabular-nums dark:text-[#A3A3A3]">{data.belum_dibaca} belum dibaca</span>
           </div>
-          <ul className="max-h-96 overflow-y-auto">
-            {loading && data.items.length === 0 && <li className="px-4 py-6 text-center text-sm text-stone-500">Memuat...</li>}
-            {!loading && data.items.length === 0 && <li className="px-4 py-6 text-center text-sm text-stone-500">Belum ada notifikasi.</li>}
+          <ul className="max-h-96 divide-y divide-stone-100 overflow-y-auto dark:divide-[#383838]/75">
+            {loading && data.items.length === 0 && <li className="px-4 py-8 text-center text-sm text-stone-500 dark:text-[#A3A3A3]">Memuat...</li>}
+            {!loading && data.items.length === 0 && <li className="px-4 py-8 text-center text-sm text-stone-500 dark:text-[#A3A3A3]">Belum ada notifikasi.</li>}
             {data.items.map((n) => (
               <li key={n.id_notifikasi}>
                 <button type="button" onClick={() => bukaNotifikasi(n)}
-                  className={`flex w-full gap-3 border-b border-stone-50 px-4 py-3 text-left hover:bg-stone-50 ${n.status_baca ? '' : 'bg-emerald-50/60'}`}>
-                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${n.status_baca ? 'bg-transparent' : 'bg-emerald-600'}`} aria-hidden="true" />
-                  <span className="min-w-0">
-                    <span className={`block text-sm ${n.status_baca ? 'text-stone-600' : 'font-medium text-stone-900'}`}>{n.pesan}</span>
-                    <span className="block text-xs text-stone-500">{n.kategori} · {formatTanggalWaktu(n.created_at)}</span>
+                  className={`flex w-full cursor-pointer gap-3 px-4 py-3 text-left transition-colors hover:bg-stone-50 dark:hover:bg-[#2B2B2B] ${n.status_baca ? '' : 'bg-emerald-50/50 dark:bg-[#2B2B2B]/70'}`}>
+                  <span className={`mt-1.5 size-2 shrink-0 rounded-full ${n.status_baca ? 'bg-transparent' : 'bg-emerald-600 dark:bg-emerald-400'}`} aria-hidden="true" />
+                  <span className="min-w-0 flex-1">
+                    <span className={`block text-sm leading-snug ${n.status_baca ? 'text-stone-600 dark:text-[#A3A3A3]' : 'font-medium text-stone-900 dark:text-[#F2F2F2]'}`}>{n.pesan}</span>
+                    <span className="mt-0.5 block text-xs text-stone-500 dark:text-[#737373]">{n.kategori} · {formatTanggalWaktu(n.created_at)}</span>
                   </span>
                 </button>
               </li>

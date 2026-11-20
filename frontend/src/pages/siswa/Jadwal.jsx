@@ -10,11 +10,11 @@ function Tabel({ rows }) {
         <tbody>
           {rows.map((j) => (
             <tr key={j.id_jadwal}>
-              <td className="whitespace-nowrap">{formatTanggal(j.tanggal, { hari: true })}</td>
-              <td className="tabular-nums">{formatWaktu(j.waktu)}</td>
-              <td className="font-medium">{j.kegiatan}</td>
-              <td>{j.lokasi}</td>
-              <td className="text-stone-500">{j.nama_program}</td>
+              <td className="whitespace-nowrap font-medium text-stone-800 dark:text-[#F2F2F2]">{formatTanggal(j.tanggal, { hari: true })}</td>
+              <td className="tabular-nums text-stone-600 dark:text-[#A3A3A3]">{formatWaktu(j.waktu)}</td>
+              <td className="font-medium text-stone-900 dark:text-[#F2F2F2]">{j.kegiatan}</td>
+              <td className="text-stone-600 dark:text-[#A3A3A3]">{j.lokasi}</td>
+              <td className="text-stone-500 dark:text-[#737373]">{j.nama_program}</td>
             </tr>
           ))}
         </tbody>

@@ -54,8 +54,8 @@ export default function Kurikulum() {
                 <tbody>
                   {kurikulum.map((k) => (
                     <tr key={k.id_kurikulum}>
-                      <td className="font-medium tabular-nums">{k.tahun}</td>
-                      <td className="max-w-md whitespace-pre-line">{k.deskripsi || '-'}</td>
+                      <td className="font-semibold text-stone-900 tabular-nums dark:text-[#F2F2F2]">{k.tahun}</td>
+                      <td className="max-w-md whitespace-pre-line leading-relaxed text-stone-600 dark:text-[#A3A3A3]">{k.deskripsi || '-'}</td>
                       <td><StatusBadge status={k.status} /></td>
                       <td className="text-right"><button type="button" className="btn-ghost btn-sm" onClick={() => openForm(k)}>Edit</button></td>
                     </tr>

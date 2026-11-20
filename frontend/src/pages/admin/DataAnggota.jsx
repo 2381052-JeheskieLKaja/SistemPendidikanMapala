@@ -88,14 +88,19 @@ export default function DataAnggota() {
         <Alert type="success" onClose={() => setAkunBaru(null)}>
           Akun Siswa dibuat untuk <b>{akunBaru.email}</b>.{' '}
           {akunBaru.password
-            ? <>Password sementara: <code className="rounded bg-white px-1.5 py-0.5 font-mono">{akunBaru.password}</code> — catat sekarang, hanya ditampilkan sekali.</>
+            ? <>Password sementara: <code className="rounded bg-white px-1.5 py-0.5 font-mono dark:bg-[#171717] dark:text-[#F2F2F2]">{akunBaru.password}</code> — catat sekarang, hanya ditampilkan sekali.</>
             : 'Gunakan password awal yang Anda isi.'}
         </Alert>
       )}
 
       <Card bodyClassName="p-0">
-        <div className="border-b border-stone-100 p-3">
-          <input className="input max-w-sm" type="search" placeholder="Cari nama, email, atau NIM..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari anggota" />
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-stone-200/70 bg-gradient-to-b from-stone-50/60 to-white px-4 py-3.5 dark:border-[#383838] dark:from-[#2B2B2B] dark:to-[#242424]">
+          <div className="relative w-full max-w-sm">
+            <svg viewBox="0 0 24 24" className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-stone-400 dark:text-[#737373]" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+              <circle cx="11" cy="11" r="8" /><path d="m21 21-4.35-4.35" strokeLinecap="round" />
+            </svg>
+            <input className="input pl-9" type="search" placeholder="Cari nama, email, atau NIM..." value={q} onChange={(e) => setQ(e.target.value)} aria-label="Cari anggota" />
+          </div>
         </div>
         <Loadable loading={loading} error={error}>
           {anggota.length === 0 ? <EmptyState>{query ? 'Tidak ada anggota yang cocok dengan pencarian.' : 'Belum ada anggota.'}</EmptyState> : (
@@ -105,15 +110,17 @@ export default function DataAnggota() {
                 <tbody>
                   {anggota.map((a) => (
                     <tr key={a.id_anggota}>
-                      <td><p className="font-medium">{a.nama}</p><p className="text-xs text-stone-500">{a.email}</p></td>
-                      <td className="tabular-nums">{a.nim || '-'}</td>
-                      <td>{a.jurusan || '-'}<p className="text-xs text-stone-500">{a.angkatan || ''}</p></td>
-                      <td>{a.kontak || a.no_hp || '-'}</td>
+                      <td><p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{a.nama}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-[#A3A3A3]">{a.email}</p></td>
+                      <td className="font-mono text-xs text-stone-700 tabular-nums dark:text-[#A3A3A3]">{a.nim || '-'}</td>
+                      <td>{a.jurusan || '-'}<p className="mt-0.5 text-xs text-stone-500 tabular-nums dark:text-[#737373]">{a.angkatan || ''}</p></td>
+                      <td className="tabular-nums">{a.kontak || a.no_hp || '-'}</td>
                       <td><StatusBadge status={a.status_keanggotaan} /></td>
                       <td><StatusBadge status={a.status_akun} /></td>
                       <td className="text-right whitespace-nowrap">
-                        <button type="button" className="btn-ghost btn-sm" onClick={() => openForm(a)}>Edit</button>
-                        <button type="button" className="btn-ghost btn-sm text-red-600" onClick={() => setHapus(a)}>Hapus</button>
+                        <div className="inline-flex items-center gap-1">
+                          <button type="button" className="btn-ghost btn-sm" onClick={() => openForm(a)}>Edit</button>
+                          <button type="button" className="btn-ghost btn-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/45 dark:hover:text-red-300" onClick={() => setHapus(a)}>Hapus</button>
+                        </div>
                       </td>
                     </tr>
                   ))}

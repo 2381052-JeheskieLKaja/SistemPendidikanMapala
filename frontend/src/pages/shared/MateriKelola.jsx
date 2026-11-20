@@ -88,28 +88,30 @@ export default function MateriKelola() {
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-stone-600">Materi dikelompokkan per kategori. Menambah materi mengirim notifikasi ke setiap siswa program ini.</p>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+        <p className="text-sm text-stone-600 dark:text-[#A3A3A3]">Materi dikelompokkan per kategori. Menambah materi mengirim notifikasi ke setiap siswa program ini.</p>
         <button type="button" className="btn-primary" onClick={() => open(null)}>+ Tambah materi</button>
       </div>
       <Loadable loading={loading} error={error}>
         {materi.length === 0 ? <Card><EmptyState>Belum ada materi pada program ini.</EmptyState></Card> : (
           <div className="space-y-4">
             {groupBy(materi, 'kategori').map(([kategori, items]) => (
-              <Card key={kategori} title={<span>{kategori} <span className="ml-1 text-sm font-normal text-stone-400">({items.length})</span></span>} bodyClassName="p-0">
-                <ul className="divide-y divide-stone-100">
+              <Card key={kategori} title={<span>{kategori} <span className="ml-1 text-sm font-normal text-stone-400 tabular-nums dark:text-[#737373]">({items.length})</span></span>} bodyClassName="p-0">
+                <ul className="divide-y divide-stone-100 dark:divide-[#383838]/75">
                   {items.map((m) => (
-                    <li key={m.id_materi} className="flex flex-col gap-2 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+                    <li key={m.id_materi} className="flex flex-col gap-3 px-5 py-3.5 transition-colors hover:bg-stone-50/70 sm:flex-row sm:items-center sm:justify-between dark:hover:bg-[#2B2B2B]/65">
                       <div className="min-w-0">
-                        <p className="font-medium text-stone-900">{m.judul}</p>
-                        {m.deskripsi && <p className="line-clamp-2 text-sm text-stone-600">{m.deskripsi}</p>}
-                        <p className="mt-1 text-xs text-stone-500">Diunggah {formatTanggalWaktu(m.tanggal_upload)}{' '}
-                          {m.has_file && <Badge color="blue">{m.ekstensi_file?.toUpperCase()}</Badge>}</p>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{m.judul}</p>
+                          {m.has_file && <Badge color="blue">{m.ekstensi_file?.toUpperCase()}</Badge>}
+                        </div>
+                        {m.deskripsi && <p className="mt-0.5 line-clamp-2 text-sm text-stone-600 dark:text-[#A3A3A3]">{m.deskripsi}</p>}
+                        <p className="mt-1 text-xs text-stone-500 dark:text-[#737373]">Diunggah {formatTanggalWaktu(m.tanggal_upload)}</p>
                       </div>
-                      <div className="flex shrink-0 gap-1">
-                        {m.has_file && <button type="button" className="btn-ghost btn-sm" onClick={() => lihatBerkas(m)}>Lihat berkas</button>}
+                      <div className="flex shrink-0 items-center gap-1.5">
+                        {m.has_file && <button type="button" className="btn-secondary btn-sm" onClick={() => lihatBerkas(m)}>Lihat berkas</button>}
                         <button type="button" className="btn-ghost btn-sm" onClick={() => open(m)}>Edit</button>
-                        <button type="button" className="btn-ghost btn-sm text-red-600" onClick={() => setHapus(m)}>Hapus</button>
+                        <button type="button" className="btn-ghost btn-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/45 dark:hover:text-red-300" onClick={() => setHapus(m)}>Hapus</button>
                       </div>
                     </li>
                   ))}
@@ -134,11 +136,11 @@ export default function MateriKelola() {
           </datalist>
           <Textarea label="Deskripsi / isi materi" rows={5} value={form.deskripsi} error={errors.deskripsi} onChange={set('deskripsi')} />
           <div>
-            <label htmlFor="file-materi" className="label">Berkas {modal?.item?.has_file && <span className="font-normal text-stone-500">(kosongkan bila tidak diganti)</span>}</label>
-            <input id="file-materi" type="file" accept={ACCEPT} className="input file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-2 file:py-1"
+            <label htmlFor="file-materi" className="label">Berkas {modal?.item?.has_file && <span className="font-normal text-stone-500 dark:text-[#A3A3A3]">(kosongkan bila tidak diganti)</span>}</label>
+            <input id="file-materi" type="file" accept={ACCEPT} className="input file:mr-3 file:rounded file:border-0 file:bg-stone-100 file:px-2 file:py-1 file:text-stone-700 dark:file:bg-[#2B2B2B] dark:file:text-[#F2F2F2]"
               onChange={(e) => setFile(e.target.files?.[0] || null)} aria-invalid={Boolean(errors.file)} />
-            {errors.file ? <p className="mt-1 text-xs text-red-600">{errors.file}</p>
-              : <p className="mt-1 text-xs text-stone-500">Opsional. PDF, Office, TXT, JPG/PNG, atau MP4. Maks {MAX_MB} MB.</p>}
+            {errors.file ? <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.file}</p>
+              : <p className="mt-1 text-xs text-stone-500 dark:text-[#737373]">Opsional. PDF, Office, TXT, JPG/PNG, atau MP4. Maks {MAX_MB} MB.</p>}
           </div>
         </form>
       </Modal>

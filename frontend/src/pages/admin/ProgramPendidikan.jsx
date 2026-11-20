@@ -75,15 +75,17 @@ export default function ProgramPendidikan() {
                 <tbody>
                   {program.map((p) => (
                     <tr key={p.id_program}>
-                      <td className="max-w-xs"><p className="font-medium">{p.nama_program}</p>{p.deskripsi && <p className="line-clamp-1 text-xs text-stone-500">{p.deskripsi}</p>}</td>
+                      <td className="max-w-xs"><p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{p.nama_program}</p>{p.deskripsi && <p className="mt-0.5 line-clamp-1 text-xs text-stone-500 dark:text-[#A3A3A3]">{p.deskripsi}</p>}</td>
                       <td><StatusBadge status={p.jenis} /></td>
-                      <td className="whitespace-nowrap">{periode(p.tanggal_mulai, p.tanggal_selesai)}</td>
-                      <td className="text-center tabular-nums">{p.jumlah_peserta}</td>
-                      <td className="text-center tabular-nums">{p.jumlah_materi}</td>
+                      <td className="whitespace-nowrap text-stone-600 dark:text-[#A3A3A3]">{periode(p.tanggal_mulai, p.tanggal_selesai)}</td>
+                      <td className="text-center font-medium tabular-nums">{p.jumlah_peserta}</td>
+                      <td className="text-center font-medium tabular-nums">{p.jumlah_materi}</td>
                       <td className="text-right whitespace-nowrap">
-                        <Link to={`/admin/program/${p.id_program}`} className="btn-secondary btn-sm">Kelola</Link>
-                        <button type="button" className="btn-ghost btn-sm" onClick={() => openForm(p)}>Edit</button>
-                        <button type="button" className="btn-ghost btn-sm text-red-600" onClick={() => setHapus(p)}>Hapus</button>
+                        <div className="inline-flex items-center gap-1">
+                          <Link to={`/admin/program/${p.id_program}`} className="btn-secondary btn-sm">Kelola</Link>
+                          <button type="button" className="btn-ghost btn-sm" onClick={() => openForm(p)}>Edit</button>
+                          <button type="button" className="btn-ghost btn-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/45 dark:hover:text-red-300" onClick={() => setHapus(p)}>Hapus</button>
+                        </div>
                       </td>
                     </tr>
                   ))}

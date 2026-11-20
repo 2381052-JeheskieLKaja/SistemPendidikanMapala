@@ -64,9 +64,9 @@ export default function Peserta() {
                 <tbody>
                   {peserta.map((p) => (
                     <tr key={p.id_peserta}>
-                      <td><p className="font-medium">{p.nama}</p><p className="text-xs text-stone-500">{p.email}</p></td>
-                      <td className="tabular-nums">{p.nim || '-'}</td>
-                      <td>{p.jurusan || '-'}<p className="text-xs text-stone-500">{p.angkatan || ''}</p></td>
+                      <td><p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{p.nama}</p><p className="mt-0.5 text-xs text-stone-500 dark:text-[#A3A3A3]">{p.email}</p></td>
+                      <td className="font-mono text-xs text-stone-700 tabular-nums dark:text-[#A3A3A3]">{p.nim || '-'}</td>
+                      <td>{p.jurusan || '-'}<p className="mt-0.5 text-xs text-stone-500 tabular-nums dark:text-[#737373]">{p.angkatan || ''}</p></td>
                       <td><StatusBadge status={p.status_keanggotaan} /></td>
                       <td className="whitespace-nowrap">{formatTanggal(p.tanggal_daftar)}</td>
                       <td><StatusBadge status={p.status} /></td>

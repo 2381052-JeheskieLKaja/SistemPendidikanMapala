@@ -12,7 +12,7 @@ export default function ConfirmDialog({ open, title = 'Konfirmasi', message, con
         </>
       }
     >
-      <p className="text-sm text-stone-600">{message}</p>
+      <p className="text-sm leading-relaxed text-stone-600 dark:text-[#A3A3A3]">{message}</p>
     </Modal>
   )
 }

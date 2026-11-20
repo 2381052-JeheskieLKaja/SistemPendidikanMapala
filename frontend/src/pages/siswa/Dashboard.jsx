@@ -16,32 +16,34 @@ export default function SiswaDashboard() {
             <div className="space-y-6">
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <StatCard label="Program diikuti" value={data.jumlah_program} />
-                <div className="card p-4">
-                  <p className="text-xs font-medium tracking-wide text-stone-500 uppercase">Progres modul</p>
-                  <p className="mt-1 text-3xl font-semibold text-emerald-700">{data.progres.persen}%</p>
-                  <p className="mt-1 text-xs text-stone-500">{data.progres.diakses} dari {data.progres.total} materi</p>
-                </div>
-                <div className="card p-4 sm:col-span-2">
-                  <p className="text-xs font-medium tracking-wide text-stone-500 uppercase">Kehadiran</p>
-                  <div className="mt-2 grid grid-cols-4 gap-2 text-center">
-                    {[['Hadir', 'hadir', 'text-emerald-700'], ['Izin', 'izin', 'text-sky-700'], ['Sakit', 'sakit', 'text-amber-700'], ['Alpa', 'alpa', 'text-red-700']].map(([l, k, c]) => (
-                      <div key={k}><p className={`text-2xl font-semibold tabular-nums ${c}`}>{data.kehadiran[k]}</p><p className="text-xs text-stone-500">{l}</p></div>
+                <StatCard label="Progres modul" value={`${data.progres.persen}%`} hint={`${data.progres.diakses} dari ${data.progres.total} materi`} />
+                <div className="card flex flex-col justify-between bg-gradient-to-b from-emerald-50/30 via-white to-white p-5 transition-all duration-150 hover:border-stone-300/90 hover:shadow-[0_4px_12px_-2px_rgba(28,25,23,0.06)] sm:col-span-2 dark:from-[#2B2B2B] dark:via-[#242424] dark:to-[#242424] dark:hover:border-[#4A4A4A] dark:hover:shadow-[0_4px_14px_-2px_rgba(0,0,0,0.45)]">
+                  <p className="text-xs font-medium tracking-wide text-stone-500 dark:text-[#A3A3A3]">Kehadiran</p>
+                  <div className="mt-3 grid grid-cols-4 divide-x divide-stone-100 text-center dark:divide-[#383838]/75">
+                    {[['Hadir', 'hadir', 'text-emerald-700 dark:text-emerald-400'], ['Izin', 'izin', 'text-sky-700 dark:text-[#F2F2F2]'], ['Sakit', 'sakit', 'text-amber-700 dark:text-amber-400'], ['Alpa', 'alpa', 'text-red-700 dark:text-red-400']].map(([l, k, c]) => (
+                      <div key={k} className="px-2">
+                        <p className={`text-2xl font-semibold tracking-tight tabular-nums ${c}`}>{data.kehadiran[k]}</p>
+                        <p className="mt-0.5 text-xs text-stone-500 dark:text-[#A3A3A3]">{l}</p>
+                      </div>
                     ))}
                   </div>
                 </div>
               </div>
 
-              <div className="grid gap-6 lg:grid-cols-2">
+              <div className="grid items-start gap-6 lg:grid-cols-2">
                 <Card title="Program saya" bodyClassName="p-0">
-                  <ul className="divide-y divide-stone-100">
+                  <ul className="divide-y divide-stone-100 dark:divide-[#383838]/75">
                     {data.program_saya.map((p) => (
-                      <li key={p.id_program} className="space-y-2 px-4 py-3">
+                      <li key={p.id_program} className="space-y-2.5 px-5 py-4">
                         <div className="flex items-start justify-between gap-3">
-                          <div><p className="font-medium text-stone-900">{p.nama_program}</p><p className="text-xs text-stone-500">{periode(p.tanggal_mulai, p.tanggal_selesai)}</p></div>
+                          <div className="min-w-0">
+                            <p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{p.nama_program}</p>
+                            <p className="mt-0.5 text-xs text-stone-500 dark:text-[#A3A3A3]">{periode(p.tanggal_mulai, p.tanggal_selesai)}</p>
+                          </div>
                           <Link to="/siswa/materi" className="btn-secondary btn-sm shrink-0">Buka materi</Link>
                         </div>
                         <ProgressBar value={p.persen} />
-                        <p className="text-xs text-stone-500">{p.diakses} dari {p.total_materi} materi sudah dibuka</p>
+                        <p className="text-xs text-stone-500 tabular-nums dark:text-[#737373]">{p.diakses} dari {p.total_materi} materi sudah dibuka</p>
                       </li>
                     ))}
                   </ul>
@@ -53,8 +55,14 @@ export default function SiswaDashboard() {
                         <tbody>
                           {data.jadwal_terdekat.map((j) => (
                             <tr key={j.id_jadwal}>
-                              <td className="whitespace-nowrap">{formatTanggal(j.tanggal)}<p className="text-xs text-stone-500">{formatWaktu(j.waktu)}</p></td>
-                              <td>{j.kegiatan}<p className="text-xs text-stone-500">{j.lokasi} · {j.nama_program}</p></td>
+                              <td className="whitespace-nowrap">
+                                <span className="font-medium text-stone-800 dark:text-[#F2F2F2]">{formatTanggal(j.tanggal)}</span>
+                                <p className="mt-0.5 text-xs text-stone-500 tabular-nums dark:text-[#A3A3A3]">{formatWaktu(j.waktu)}</p>
+                              </td>
+                              <td>
+                                <span className="font-medium text-stone-800 dark:text-[#F2F2F2]">{j.kegiatan}</span>
+                                <p className="mt-0.5 text-xs text-stone-500 dark:text-[#A3A3A3]">{j.lokasi} · {j.nama_program}</p>
+                              </td>
                             </tr>
                           ))}
                         </tbody>

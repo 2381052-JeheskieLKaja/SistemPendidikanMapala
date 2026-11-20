@@ -9,7 +9,7 @@ export default function JadwalPicker({ idProgram, value, onChange }) {
     <Card className="mb-6">
       <Loadable loading={loading} error={error}>
         {jadwal.length === 0 ? <EmptyState>Belum ada jadwal kegiatan. Tambahkan jadwal terlebih dahulu di tab Jadwal.</EmptyState> : (
-          <div>
+          <div className="max-w-2xl">
             <label htmlFor="pilih-jadwal" className="label">Kegiatan</label>
             <select id="pilih-jadwal" className="input" value={value} onChange={(e) => onChange(e.target.value)}>
               <option value="">— Pilih kegiatan —</option>

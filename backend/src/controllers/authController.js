@@ -5,6 +5,8 @@ const { comparePassword } = require("../utils/hash");
 const { ok, unauthorized, forbidden } = require("../utils/response");
 const { validate } = require("../utils/validators");
 
+const DUMMY_HASH = "$2a$10$dP8fUPcDUr/XbQJLyMWk3e5HDgO/xbAkT/oh7D1y.ldFk9BlJPtrm";
+
 /** POST /api/auth/login */
 async function login(req, res) {
   const { email, password } = validate(req.body, {

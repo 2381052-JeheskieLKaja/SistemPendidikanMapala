@@ -3,9 +3,9 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState } fro
 const ToastContext = createContext(() => {})
 
 const STYLES = {
-  success: 'border-emerald-200 bg-white text-emerald-800 [&>span:first-child]:bg-emerald-600',
-  error: 'border-red-200 bg-white text-red-800 [&>span:first-child]:bg-red-600',
-  info: 'border-sky-200 bg-white text-sky-800 [&>span:first-child]:bg-sky-600',
+  success: 'border-emerald-200 bg-white text-emerald-800 dark:border-emerald-800/60 dark:bg-[#242424] dark:text-emerald-200 [&>span:first-child]:bg-emerald-600 dark:[&>span:first-child]:bg-emerald-400',
+  error: 'border-red-200 bg-white text-red-800 dark:border-red-800/60 dark:bg-[#242424] dark:text-red-200 [&>span:first-child]:bg-red-600 dark:[&>span:first-child]:bg-red-400',
+  info: 'border-sky-200 bg-white text-sky-800 dark:border-[#383838] dark:bg-[#242424] dark:text-[#F2F2F2] [&>span:first-child]:bg-sky-600 dark:[&>span:first-child]:bg-[#A3A3A3]',
 }
 
 /** Notifikasi singkat (feedback setelah aksi). Pakai: const notify = useToast(); notify('success', 'Tersimpan'). */
@@ -27,10 +27,10 @@ export function ToastProvider({ children }) {
       <div className="pointer-events-none fixed inset-x-4 bottom-4 z-[60] flex flex-col items-end gap-2 sm:left-auto">
         {toasts.map((t) => (
           <div key={t.id} role={t.type === 'error' ? 'alert' : 'status'}
-            className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-lg border px-3 py-2.5 text-sm shadow-lg ${STYLES[t.type] || STYLES.info}`}>
+            className={`pointer-events-auto flex w-full max-w-sm items-start gap-3 rounded-xl border px-4 py-3 text-sm shadow-lg transition-colors duration-200 dark:shadow-[0_12px_28px_rgba(0,0,0,0.55)] ${STYLES[t.type] || STYLES.info}`}>
             <span className="mt-1.5 size-2 shrink-0 rounded-full" aria-hidden="true" />
-            <span className="flex-1">{t.text}</span>
-            <button type="button" onClick={() => dismiss(t.id)} className="text-stone-400 hover:text-stone-700" aria-label="Tutup notifikasi">✕</button>
+            <span className="flex-1 leading-snug">{t.text}</span>
+            <button type="button" onClick={() => dismiss(t.id)} className="text-stone-400 transition hover:text-stone-700 dark:text-[#737373] dark:hover:text-[#F2F2F2]" aria-label="Tutup notifikasi">✕</button>
           </div>
         ))}
       </div>

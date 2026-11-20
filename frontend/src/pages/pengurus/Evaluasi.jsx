@@ -64,41 +64,48 @@ export default function Evaluasi() {
         <Loadable loading={loading} error={error}>
           {data && (
             <div className="space-y-6">
-              <Card title={`Evaluasi: ${data.jadwal.kegiatan}`}>
+              <Card title={`Evaluasi: ${data.jadwal.kegiatan}`} bodyClassName="p-0">
                 {rows.length === 0 ? <EmptyState>Program ini belum memiliki peserta.</EmptyState> : (
-                  <form onSubmit={simpan} className="space-y-4">
-                    <p className="text-sm text-stone-500">Isi hasil penilaian lapangan. Baris yang dikosongkan tidak disimpan.</p>
-                    {rows.map((r, i) => (
-                      <div key={r.id_peserta} className="grid gap-3 rounded-lg border border-stone-200 p-3 md:grid-cols-[12rem_1fr_1fr]">
-                        <div><p className="font-medium">{r.nama}</p><p className="text-xs text-stone-500">{r.nim || '-'}</p></div>
-                        <div>
-                          <label htmlFor={`hasil-${r.id_peserta}`} className="label">Hasil penilaian</label>
-                          <textarea id={`hasil-${r.id_peserta}`} rows={2} className={`input ${errors[r.id_peserta] ? 'input-error' : ''}`} maxLength={5000}
-                            value={r.hasil_penilaian} onChange={(e) => setRow(i, { hasil_penilaian: e.target.value })} />
-                          {errors[r.id_peserta] && <p className="mt-1 text-xs text-red-600">{errors[r.id_peserta]}</p>}
+                  <form onSubmit={simpan}>
+                    <p className="border-b border-stone-100 bg-stone-50/50 px-5 py-3 text-sm text-stone-500 dark:border-[#383838] dark:bg-[#1C1C1C]/80 dark:text-[#A3A3A3]">Isi hasil penilaian lapangan. Baris yang dikosongkan tidak disimpan.</p>
+                    <div className="divide-y divide-stone-100 dark:divide-[#383838]/75">
+                      {rows.map((r, i) => (
+                        <div key={r.id_peserta} className="grid gap-4 p-5 md:grid-cols-[12.5rem_1fr_1fr]">
+                          <div>
+                            <p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{r.nama}</p>
+                            <p className="mt-0.5 font-mono text-xs text-stone-500 tabular-nums dark:text-[#737373]">{r.nim || '-'}</p>
+                          </div>
+                          <div>
+                            <label htmlFor={`hasil-${r.id_peserta}`} className="label">Hasil penilaian</label>
+                            <textarea id={`hasil-${r.id_peserta}`} rows={2} className={`input ${errors[r.id_peserta] ? 'input-error' : ''}`} maxLength={5000}
+                              value={r.hasil_penilaian} onChange={(e) => setRow(i, { hasil_penilaian: e.target.value })} />
+                            {errors[r.id_peserta] && <p className="mt-1.5 text-xs text-red-600 dark:text-red-400">{errors[r.id_peserta]}</p>}
+                          </div>
+                          <div>
+                            <label htmlFor={`catatan-${r.id_peserta}`} className="label">Catatan</label>
+                            <textarea id={`catatan-${r.id_peserta}`} rows={2} className="input" maxLength={5000}
+                              value={r.catatan} onChange={(e) => setRow(i, { catatan: e.target.value })} />
+                          </div>
                         </div>
-                        <div>
-                          <label htmlFor={`catatan-${r.id_peserta}`} className="label">Catatan</label>
-                          <textarea id={`catatan-${r.id_peserta}`} rows={2} className="input" maxLength={5000}
-                            value={r.catatan} onChange={(e) => setRow(i, { catatan: e.target.value })} />
-                        </div>
-                      </div>
-                    ))}
-                    <Alert className="mb-0">{pesan}</Alert>
-                    <div className="flex justify-end"><button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan evaluasi'}</button></div>
+                      ))}
+                    </div>
+                    {pesan && <div className="px-5 pt-3"><Alert className="mb-0">{pesan}</Alert></div>}
+                    <div className="flex justify-end border-t border-stone-100 bg-stone-50/50 px-5 py-3.5 dark:border-[#383838] dark:bg-[#1C1C1C]/80">
+                      <button type="submit" className="btn-primary" disabled={saving}>{saving ? 'Menyimpan...' : 'Simpan evaluasi'}</button>
+                    </div>
                   </form>
                 )}
               </Card>
 
-              <Card title={`Rekap hasil evaluasi kegiatan (${tercatat.length} siswa)`}>
+              <Card title={`Rekap hasil evaluasi kegiatan (${tercatat.length} siswa)`} bodyClassName="p-0">
                 {tercatat.length === 0 ? <EmptyState>Belum ada hasil evaluasi untuk kegiatan ini.</EmptyState> : (
-                  <ul className="space-y-2">
+                  <ul className="divide-y divide-stone-100 dark:divide-[#383838]/75">
                     {tercatat.map((r) => (
-                      <li key={r.id_peserta} className="rounded-lg bg-stone-50 p-3 text-sm">
-                        <p className="font-medium">{r.nama}</p>
-                        <p className="mt-1 whitespace-pre-line text-stone-700">{r.hasil_penilaian}</p>
-                        {r.catatan && <p className="mt-1 text-stone-500">Catatan: {r.catatan}</p>}
-                        <p className="mt-1 text-xs text-stone-400">Dicatat oleh {r.pencatat} · {formatTanggal(r.tanggal_evaluasi)}</p>
+                      <li key={r.id_peserta} className="px-5 py-4 text-sm">
+                        <p className="font-medium text-stone-900 dark:text-[#F2F2F2]">{r.nama}</p>
+                        <p className="mt-1.5 whitespace-pre-line leading-relaxed text-stone-700 dark:text-[#A3A3A3]">{r.hasil_penilaian}</p>
+                        {r.catatan && <p className="mt-1.5 text-stone-500 dark:text-[#A3A3A3]">Catatan: {r.catatan}</p>}
+                        <p className="mt-1.5 text-xs text-stone-400 dark:text-[#737373]">Dicatat oleh {r.pencatat} · {formatTanggal(r.tanggal_evaluasi)}</p>
                       </li>
                     ))}
                   </ul>

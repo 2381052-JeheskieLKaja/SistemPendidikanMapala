@@ -67,7 +67,7 @@ export default function Jadwal() {
   return (
     <>
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-sm text-stone-600">Jadwal kegiatan terurut berdasarkan tanggal dan waktu.</p>
+        <p className="text-sm text-stone-600 dark:text-[#A3A3A3]">Jadwal kegiatan terurut berdasarkan tanggal dan waktu.</p>
         <button type="button" className="btn-primary" onClick={() => openForm(null)}>+ Tambah jadwal</button>
       </div>
       <Card bodyClassName="p-0">
@@ -78,18 +78,22 @@ export default function Jadwal() {
                 <thead><tr><th>Tanggal</th><th>Waktu</th><th>Kegiatan</th><th>Lokasi</th><th>Pencatatan</th><th className="text-right">Aksi</th></tr></thead>
                 <tbody>
                   {jadwal.map((j) => (
-                    <tr key={j.id_jadwal} className={j.tanggal < today ? 'text-stone-500' : ''}>
+                    <tr key={j.id_jadwal} className={j.tanggal < today ? 'text-stone-500 dark:text-[#737373]' : ''}>
                       <td className="whitespace-nowrap">{formatTanggal(j.tanggal, { hari: true })}</td>
                       <td className="tabular-nums">{formatWaktu(j.waktu)}</td>
-                      <td className="font-medium text-stone-800">{j.kegiatan}</td>
+                      <td className="font-medium text-stone-900 dark:text-[#F2F2F2]">{j.kegiatan}</td>
                       <td>{j.lokasi}</td>
-                      <td className="space-x-1 whitespace-nowrap">
-                        <Badge color={j.jumlah_absensi ? 'green' : 'gray'}>Absensi {j.jumlah_absensi ? '✓' : '–'}</Badge>
-                        <Badge color={j.jumlah_evaluasi ? 'green' : 'gray'}>Evaluasi {j.jumlah_evaluasi ? '✓' : '–'}</Badge>
+                      <td className="whitespace-nowrap">
+                        <div className="inline-flex items-center gap-1.5">
+                          <Badge color={j.jumlah_absensi ? 'green' : 'gray'}>Absensi {j.jumlah_absensi ? '✓' : '–'}</Badge>
+                          <Badge color={j.jumlah_evaluasi ? 'green' : 'gray'}>Evaluasi {j.jumlah_evaluasi ? '✓' : '–'}</Badge>
+                        </div>
                       </td>
                       <td className="text-right whitespace-nowrap">
-                        <button type="button" className="btn-ghost btn-sm" onClick={() => openForm(j)}>Edit</button>
-                        <button type="button" className="btn-ghost btn-sm text-red-600" onClick={() => setHapus(j)}>Hapus</button>
+                        <div className="inline-flex items-center gap-1">
+                          <button type="button" className="btn-ghost btn-sm" onClick={() => openForm(j)}>Edit</button>
+                          <button type="button" className="btn-ghost btn-sm text-red-600 hover:bg-red-50 hover:text-red-700 dark:text-red-400 dark:hover:bg-red-950/45 dark:hover:text-red-300" onClick={() => setHapus(j)}>Hapus</button>
+                        </div>
                       </td>
                     </tr>
                   ))}
