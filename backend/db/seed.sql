@@ -5,7 +5,7 @@
 SET @pw = '$2a$10$dP8fUPcDUr/XbQJLyMWk3e5HDgO/xbAkT/oh7D1y.ldFk9BlJPtrm';
 
 INSERT INTO users (id_user, nama, email, password, no_hp, role, status) VALUES
-  (1, 'Admin MAPALA',          'admin@mapala.test',    @pw, '081200000001', 'admin',    'aktif'),
+  (1, 'Admin MAPALA',          'cle',    @pw, '081200000001', 'admin',    'aktif'),
   (2, 'Sekretaris Pengurus',   'pengurus@mapala.test', @pw, '081200000002', 'pengurus', 'aktif'),
   (3, 'Budi Santoso',          'budi@mapala.test',     @pw, '081200000003', 'siswa',    'aktif'),
   (4, 'Sari Wulandari',        'sari@mapala.test',     @pw, '081200000004', 'siswa',    'aktif'),
