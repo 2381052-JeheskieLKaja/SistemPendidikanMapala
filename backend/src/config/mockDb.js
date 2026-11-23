@@ -1,7 +1,7 @@
 // In-memory mock database for AI Studio (seeded from backend/db/seed.sql).
-// Provides a mysql2/promise-compatible query([rows, fields]) and transaction interface.
+// Provides a PostgreSQL-compatible query([rows, res]) and transaction interface when PG is not configured.
 
-const SEED_PW = '$2a$10$80VYls4DMkOyuuyr5pwM.e87wdyFz89c/S2.u6pCogRT1ZJezqtWK'; // password123
+const SEED_PW = '$2a$10$F/rOD4jGGRCpmH1lIxoK/.0wvjKthX4ZTZHp/0bFW85fNS3HvR0Ci'; // password123
 
 function createInitialStore() {
   return {
@@ -86,16 +86,16 @@ function createInitialStore() {
       { id_progres: 3, id_peserta: 2, id_materi: 1, status: 'sudah_diakses', tanggal_akses: '2026-10-12 18:30:00' },
     ],
     notifikasi: [
-      { id_notifikasi: 1, id_user: 3, id_materi: 1, pesan: 'Materi baru: Survival Dasar', status_baca: 1, created_at: '2026-09-05 09:00:00' },
-      { id_notifikasi: 2, id_user: 4, id_materi: 1, pesan: 'Materi baru: Survival Dasar', status_baca: 1, created_at: '2026-09-05 09:00:00' },
-      { id_notifikasi: 3, id_user: 3, id_materi: 2, pesan: 'Materi baru: Membaca Peta Topografi', status_baca: 1, created_at: '2026-09-20 09:00:00' },
-      { id_notifikasi: 4, id_user: 4, id_materi: 2, pesan: 'Materi baru: Membaca Peta Topografi', status_baca: 0, created_at: '2026-09-20 09:00:00' },
-      { id_notifikasi: 5, id_user: 3, id_materi: 3, pesan: 'Materi baru: Penggunaan Kompas', status_baca: 0, created_at: '2026-10-01 09:00:00' },
-      { id_notifikasi: 6, id_user: 4, id_materi: 3, pesan: 'Materi baru: Penggunaan Kompas', status_baca: 0, created_at: '2026-10-01 09:00:00' },
-      { id_notifikasi: 7, id_user: 3, id_materi: 4, pesan: 'Materi baru: Pertolongan Pertama', status_baca: 0, created_at: '2026-10-20 09:00:00' },
-      { id_notifikasi: 8, id_user: 4, id_materi: 4, pesan: 'Materi baru: Pertolongan Pertama', status_baca: 0, created_at: '2026-10-20 09:00:00' },
-      { id_notifikasi: 9, id_user: 3, id_materi: 5, pesan: 'Materi baru: Simpul Dasar', status_baca: 0, created_at: '2026-11-02 09:00:00' },
-      { id_notifikasi: 10, id_user: 3, id_materi: 6, pesan: 'Materi baru: Bantuan Hidup Dasar', status_baca: 0, created_at: '2026-11-03 09:00:00' },
+      { id_notifikasi: 1, id_user: 3, id_materi: 1, pesan: 'Materi baru: Survival Dasar', status_baca: true, created_at: '2026-09-05 09:00:00' },
+      { id_notifikasi: 2, id_user: 4, id_materi: 1, pesan: 'Materi baru: Survival Dasar', status_baca: true, created_at: '2026-09-05 09:00:00' },
+      { id_notifikasi: 3, id_user: 3, id_materi: 2, pesan: 'Materi baru: Membaca Peta Topografi', status_baca: true, created_at: '2026-09-20 09:00:00' },
+      { id_notifikasi: 4, id_user: 4, id_materi: 2, pesan: 'Materi baru: Membaca Peta Topografi', status_baca: false, created_at: '2026-09-20 09:00:00' },
+      { id_notifikasi: 5, id_user: 3, id_materi: 3, pesan: 'Materi baru: Penggunaan Kompas', status_baca: false, created_at: '2026-10-01 09:00:00' },
+      { id_notifikasi: 6, id_user: 4, id_materi: 3, pesan: 'Materi baru: Penggunaan Kompas', status_baca: false, created_at: '2026-10-01 09:00:00' },
+      { id_notifikasi: 7, id_user: 3, id_materi: 4, pesan: 'Materi baru: Pertolongan Pertama', status_baca: false, created_at: '2026-10-20 09:00:00' },
+      { id_notifikasi: 8, id_user: 4, id_materi: 4, pesan: 'Materi baru: Pertolongan Pertama', status_baca: false, created_at: '2026-10-20 09:00:00' },
+      { id_notifikasi: 9, id_user: 3, id_materi: 5, pesan: 'Materi baru: Simpul Dasar', status_baca: false, created_at: '2026-11-02 09:00:00' },
+      { id_notifikasi: 10, id_user: 3, id_materi: 6, pesan: 'Materi baru: Bantuan Hidup Dasar', status_baca: false, created_at: '2026-11-03 09:00:00' },
     ],
     seq: {
       users: 5,
@@ -110,17 +110,23 @@ function createInitialStore() {
       progres_materi: 3,
       notifikasi: 10,
     },
+    constraints: {},
   };
 }
 
 let dbState = createInitialStore();
+
+function resetMockStore() {
+  dbState = createInitialStore();
+}
 
 const clone = (v) => JSON.parse(JSON.stringify(v));
 const curDate = () => new Date().toISOString().slice(0, 10);
 const nowTs = () => new Date().toISOString().slice(0, 19).replace('T', ' ');
 const cmpStr = (a, b) => String(a ?? '').localeCompare(String(b ?? ''));
 const cmpDesc = (a, b) => cmpStr(b, a);
-const dupError = (msg = 'Duplicate entry') => Object.assign(new Error(msg), { code: 'ER_DUP_ENTRY' });
+const dupError = (msg = 'duplicate key value violates unique constraint') => Object.assign(new Error(msg), { code: '23505' });
+const checkError = (name) => Object.assign(new Error(`new row violates check constraint "${name}"`), { code: '23514' });
 
 function nextId(table) {
   dbState.seq[table] = (dbState.seq[table] || 0) + 1;
@@ -159,13 +165,29 @@ async function query(rawSql, params = []) {
   const sql = rawSql.replace(/\s+/g, ' ').trim();
   const s = sql.toLowerCase();
 
-  if (s === 'select 1') return [[{ 1: 1 }], []];
+  if (s === 'select 1') return [[{ '?column?': 1 }], { rowCount: 1 }];
+
+  // ---- TEST DDL CONSTRAINTS (rollback test support) ----
+  if (s.startsWith('alter table ')) {
+    const addMatch = s.match(/^alter table (\w+) add constraint (\w+) check/);
+    if (addMatch) {
+      dbState.constraints[addMatch[2]] = true;
+      return [[], { rowCount: 0 }];
+    }
+    const dropMatch = s.match(/^alter table (\w+) drop constraint (\w+)/);
+    if (dropMatch) {
+      delete dbState.constraints[dropMatch[2]];
+      return [[], { rowCount: 0 }];
+    }
+  }
 
   // ---- AUTH ----
-  if (s.startsWith('select id_user, nama, password, role, status from users where email = ?')) {
+  if (s.startsWith('select id_user, nama, password, role, status from users where email = $1')) {
     const email = String(params[0] || '').toLowerCase();
-    const rows = dbState.users.filter((u) => u.email.toLowerCase() === email).map(({ id_user, nama, password, role, status }) => ({ id_user, nama, password, role, status }));
-    return [clone(rows), []];
+    const rows = dbState.users
+      .filter((u) => u.email.toLowerCase() === email)
+      .map(({ id_user, nama, password, role, status }) => ({ id_user, nama, password, role, status }));
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- PUBLIK ----
@@ -173,17 +195,18 @@ async function query(rawSql, params = []) {
     const rows = [...dbState.program_pendidikan]
       .sort((a, b) => cmpDesc(a.tanggal_mulai, b.tanggal_mulai) || cmpStr(a.nama_program, b.nama_program))
       .map(({ nama_program, jenis, deskripsi, tanggal_mulai, tanggal_selesai }) => ({ nama_program, jenis, deskripsi, tanggal_mulai, tanggal_selesai }));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- DASHBOARD ----
-  if (s.startsWith('select status_keanggotaan, count(*) as jumlah from anggota group by status_keanggotaan')) {
+  if (s.startsWith('select status_keanggotaan, count(*)::int as jumlah from anggota group by status_keanggotaan')) {
     const counts = {};
     dbState.anggota.forEach((a) => { counts[a.status_keanggotaan] = (counts[a.status_keanggotaan] || 0) + 1; });
-    return [Object.entries(counts).map(([status_keanggotaan, jumlah]) => ({ status_keanggotaan, jumlah })), []];
+    const rows = Object.entries(counts).map(([status_keanggotaan, jumlah]) => ({ status_keanggotaan, jumlah }));
+    return [rows, { rowCount: rows.length }];
   }
 
-  if (s.includes('where curdate() between p.tanggal_mulai and p.tanggal_selesai')) {
+  if (s.includes('where current_date between p.tanggal_mulai and p.tanggal_selesai')) {
     const today = curDate();
     const rows = dbState.program_pendidikan
       .filter((p) => p.tanggal_mulai && p.tanggal_selesai && p.tanggal_mulai <= today && today <= p.tanggal_selesai)
@@ -196,10 +219,10 @@ async function query(rawSql, params = []) {
         tanggal_selesai: p.tanggal_selesai,
         jumlah_peserta: dbState.peserta_pendidikan.filter((pp) => pp.id_program === p.id_program).length,
       }));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.includes('from jadwal j join program_pendidikan p on p.id_program = j.id_program where j.tanggal >= curdate()')) {
+  if (s.includes('from jadwal j join program_pendidikan p on p.id_program = j.id_program where j.tanggal >= current_date')) {
     const today = curDate();
     const rows = dbState.jadwal
       .filter((j) => j.tanggal >= today)
@@ -209,15 +232,15 @@ async function query(rawSql, params = []) {
         const p = dbState.program_pendidikan.find((x) => x.id_program === j.id_program) || {};
         return { id_jadwal: j.id_jadwal, id_program: j.id_program, tanggal: j.tanggal, waktu: j.waktu, lokasi: j.lokasi, kegiatan: j.kegiatan, nama_program: p.nama_program };
       });
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.startsWith('select nama from users where id_user = ?')) {
+  if (s.startsWith('select nama from users where id_user = $1')) {
     const u = dbState.users.find((x) => x.id_user === Number(params[0]));
-    return [u ? [{ nama: u.nama }] : [], []];
+    return [u ? [{ nama: u.nama }] : [], { rowCount: u ? 1 : 0 }];
   }
 
-  if (s.includes('select ab.status, count(*) as jumlah from absensi ab')) {
+  if (s.includes('select ab.status, count(*)::int as jumlah from absensi ab')) {
     const idUser = Number(params[0]);
     const an = dbState.anggota.find((a) => a.id_user === idUser);
     const pesertaIds = new Set(an ? dbState.peserta_pendidikan.filter((pp) => pp.id_anggota === an.id_anggota).map((pp) => pp.id_peserta) : []);
@@ -225,10 +248,11 @@ async function query(rawSql, params = []) {
     dbState.absensi.filter((ab) => pesertaIds.has(ab.id_peserta)).forEach((ab) => {
       counts[ab.status] = (counts[ab.status] || 0) + 1;
     });
-    return [Object.entries(counts).map(([status, jumlah]) => ({ status, jumlah })), []];
+    const rows = Object.entries(counts).map(([status, jumlah]) => ({ status, jumlah }));
+    return [rows, { rowCount: rows.length }];
   }
 
-  if (s.includes('where an.id_user = ? and j.tanggal >= curdate()')) {
+  if (s.includes('where an.id_user = $1 and j.tanggal >= current_date')) {
     const idUser = Number(params[0]);
     const today = curDate();
     const an = dbState.anggota.find((a) => a.id_user === idUser);
@@ -241,52 +265,52 @@ async function query(rawSql, params = []) {
         const p = dbState.program_pendidikan.find((x) => x.id_program === j.id_program) || {};
         return { id_jadwal: j.id_jadwal, tanggal: j.tanggal, waktu: j.waktu, lokasi: j.lokasi, kegiatan: j.kegiatan, nama_program: p.nama_program };
       });
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- PROGRAM ----
-  if (s.includes('from program_pendidikan p where p.id_program = ?')) {
+  if (s.includes('from program_pendidikan p where p.id_program = $1')) {
     const p = dbState.program_pendidikan.find((x) => x.id_program === Number(params[0]));
-    return [p ? [clone(enrichProgram(p))] : [], []];
+    return [p ? [clone(enrichProgram(p))] : [], { rowCount: p ? 1 : 0 }];
   }
 
   if (s.includes('from program_pendidikan p order by p.tanggal_mulai desc, p.id_program desc')) {
     const rows = [...dbState.program_pendidikan]
       .sort((a, b) => cmpDesc(a.tanggal_mulai, b.tanggal_mulai) || b.id_program - a.id_program)
       .map(enrichProgram);
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.startsWith('insert into program_pendidikan')) {
     const [nama_program, jenis, deskripsi, tanggal_mulai, tanggal_selesai] = params;
     const id_program = nextId('program_pendidikan');
     dbState.program_pendidikan.push({ id_program, nama_program, jenis, deskripsi: deskripsi ?? null, tanggal_mulai: tanggal_mulai ?? null, tanggal_selesai: tanggal_selesai ?? null });
-    return [{ insertId: id_program, affectedRows: 1 }, []];
+    return [[{ id_program }], { rowCount: 1 }];
   }
 
   if (s.startsWith('update program_pendidikan set')) {
     const [nama_program, jenis, deskripsi, tanggal_mulai, tanggal_selesai, id] = params;
     const p = dbState.program_pendidikan.find((x) => x.id_program === Number(id));
     if (p) Object.assign(p, { nama_program, jenis, deskripsi: deskripsi ?? null, tanggal_mulai: tanggal_mulai ?? null, tanggal_selesai: tanggal_selesai ?? null });
-    return [{ affectedRows: p ? 1 : 0 }, []];
+    return [[], { rowCount: p ? 1 : 0 }];
   }
 
-  if (s.startsWith('delete from program_pendidikan where id_program = ?')) {
+  if (s.startsWith('delete from program_pendidikan where id_program = $1')) {
     const id = Number(params[0]);
     const before = dbState.program_pendidikan.length;
     dbState.program_pendidikan = dbState.program_pendidikan.filter((x) => x.id_program !== id);
-    return [{ affectedRows: before - dbState.program_pendidikan.length }, []];
+    return [[], { rowCount: before - dbState.program_pendidikan.length }];
   }
 
   // ---- ANGGOTA ----
-  if (s.includes('from anggota a join users u on u.id_user = a.id_user where a.id_anggota = ?')) {
+  if (s.includes('from anggota a join users u on u.id_user = a.id_user where a.id_anggota = $1')) {
     const a = dbState.anggota.find((x) => x.id_anggota === Number(params[0]));
-    return [a ? [clone(enrichAnggota(a))] : [], []];
+    return [a ? [clone(enrichAnggota(a))] : [], { rowCount: a ? 1 : 0 }];
   }
 
-  if (s.includes('from anggota a join users u on u.id_user = a.id_user')) {
+  if (s.startsWith('select a.id_anggota, a.id_user, a.nim') && s.includes('from anggota a join users u on u.id_user = a.id_user')) {
     let list = dbState.anggota.map(enrichAnggota);
-    if (s.includes('where u.nama like ?')) {
+    if (s.includes('where u.nama ilike $1')) {
       const q = String(params[0] || '').replace(/%/g, '').toLowerCase();
       list = list.filter((x) =>
         (x.nama || '').toLowerCase().includes(q) ||
@@ -295,21 +319,21 @@ async function query(rawSql, params = []) {
       );
     }
     list.sort((a, b) => cmpStr(a.nama, b.nama));
-    return [clone(list), []];
+    return [clone(list), { rowCount: list.length }];
   }
 
-  if (s.startsWith('select 1 from users where email = ? and id_user <> ?')) {
+  if (s.startsWith('select 1 from users where email = $1 and id_user <> $2')) {
     const email = String(params[0] || '').toLowerCase();
     const exceptId = Number(params[1]);
     const found = dbState.users.some((u) => u.email.toLowerCase() === email && u.id_user !== exceptId);
-    return [found ? [{ 1: 1 }] : [], []];
+    return [found ? [{ '?column?': 1 }] : [], { rowCount: found ? 1 : 0 }];
   }
 
-  if (s.startsWith('select 1 from anggota where nim = ? and id_anggota <> ?')) {
+  if (s.startsWith('select 1 from anggota where nim = $1 and id_anggota <> $2')) {
     const nim = params[0];
     const exceptId = Number(params[1]);
     const found = dbState.anggota.some((a) => a.nim && a.nim === nim && a.id_anggota !== exceptId);
-    return [found ? [{ 1: 1 }] : [], []];
+    return [found ? [{ '?column?': 1 }] : [], { rowCount: found ? 1 : 0 }];
   }
 
   if (s.startsWith('insert into users')) {
@@ -317,131 +341,133 @@ async function query(rawSql, params = []) {
     if (dbState.users.some((u) => u.email.toLowerCase() === String(email).toLowerCase())) throw dupError('Email sudah digunakan');
     const id_user = nextId('users');
     dbState.users.push({ id_user, nama, email, password, no_hp: no_hp ?? null, role: 'siswa', status: 'aktif' });
-    return [{ insertId: id_user, affectedRows: 1 }, []];
+    return [[{ id_user }], { rowCount: 1 }];
   }
 
   if (s.startsWith('insert into anggota')) {
     const [id_user, nim, jurusan, angkatan, kontak, status_keanggotaan] = params;
+    if (dbState.constraints.chk_uji && jurusan === 'GAGAL') throw checkError('chk_uji');
     if (nim && dbState.anggota.some((a) => a.nim === nim)) throw dupError('NIM sudah digunakan');
     const id_anggota = nextId('anggota');
     dbState.anggota.push({ id_anggota, id_user: Number(id_user), nim: nim ?? null, jurusan: jurusan ?? null, angkatan: angkatan ?? null, kontak: kontak ?? null, status_keanggotaan });
-    return [{ insertId: id_anggota, affectedRows: 1 }, []];
+    return [[{ id_anggota }], { rowCount: 1 }];
   }
 
-  if (s.startsWith('update users set nama = ?, email = ?, no_hp = ?, status = ? where id_user = ?')) {
+  if (s.startsWith('update users set nama = $1, email = $2, no_hp = $3, status = $4 where id_user = $5')) {
     const [nama, email, no_hp, status, id] = params;
     const u = dbState.users.find((x) => x.id_user === Number(id));
     if (u) Object.assign(u, { nama, email, no_hp: no_hp ?? null, status });
-    return [{ affectedRows: u ? 1 : 0 }, []];
+    return [[], { rowCount: u ? 1 : 0 }];
   }
 
-  if (s.startsWith('update anggota set nim = ?, jurusan = ?, angkatan = ?, kontak = ?, status_keanggotaan = ? where id_anggota = ?')) {
+  if (s.startsWith('update anggota set nim = $1, jurusan = $2, angkatan = $3, kontak = $4, status_keanggotaan = $5 where id_anggota = $6')) {
     const [nim, jurusan, angkatan, kontak, status_keanggotaan, id] = params;
     const a = dbState.anggota.find((x) => x.id_anggota === Number(id));
     if (a) Object.assign(a, { nim: nim ?? null, jurusan: jurusan ?? null, angkatan: angkatan ?? null, kontak: kontak ?? null, status_keanggotaan });
-    return [{ affectedRows: a ? 1 : 0 }, []];
+    return [[], { rowCount: a ? 1 : 0 }];
   }
 
-  if (s.startsWith('delete from anggota where id_anggota = ?')) {
+  if (s.startsWith('delete from anggota where id_anggota = $1')) {
     const id = Number(params[0]);
     const before = dbState.anggota.length;
     dbState.anggota = dbState.anggota.filter((x) => x.id_anggota !== id);
-    return [{ affectedRows: before - dbState.anggota.length }, []];
+    return [[], { rowCount: before - dbState.anggota.length }];
   }
 
-  if (s.startsWith('delete from users where id_user = ?')) {
+  if (s.startsWith('delete from users where id_user = $1')) {
     const id = Number(params[0]);
     const before = dbState.users.length;
     dbState.users = dbState.users.filter((x) => x.id_user !== id);
-    return [{ affectedRows: before - dbState.users.length }, []];
+    return [[], { rowCount: before - dbState.users.length }];
   }
 
   // ---- KURIKULUM ----
-  if (s.startsWith('select * from kurikulum where id_kurikulum = ?')) {
+  if (s.startsWith('select * from kurikulum where id_kurikulum = $1')) {
     const k = dbState.kurikulum.find((x) => x.id_kurikulum === Number(params[0]));
-    return [k ? [clone(k)] : [], []];
+    return [k ? [clone(k)] : [], { rowCount: k ? 1 : 0 }];
   }
 
-  if (s.startsWith('select * from kurikulum where id_program = ?')) {
+  if (s.startsWith('select * from kurikulum where id_program = $1')) {
     const rows = dbState.kurikulum
       .filter((x) => x.id_program === Number(params[0]))
       .sort((a, b) => cmpDesc(a.tahun, b.tahun) || b.id_kurikulum - a.id_kurikulum);
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.startsWith('insert into kurikulum')) {
     const [id_program, tahun, deskripsi, status] = params;
     const id_kurikulum = nextId('kurikulum');
     dbState.kurikulum.push({ id_kurikulum, id_program: Number(id_program), tahun, deskripsi: deskripsi ?? null, status });
-    return [{ insertId: id_kurikulum, affectedRows: 1 }, []];
+    return [[{ id_kurikulum }], { rowCount: 1 }];
   }
 
   if (s.startsWith('update kurikulum set')) {
     const [tahun, deskripsi, status, id] = params;
     const k = dbState.kurikulum.find((x) => x.id_kurikulum === Number(id));
     if (k) Object.assign(k, { tahun, deskripsi: deskripsi ?? null, status });
-    return [{ affectedRows: k ? 1 : 0 }, []];
+    return [[], { rowCount: k ? 1 : 0 }];
   }
 
   // ---- MATERI ----
-  if (s.startsWith('select * from materi where id_materi = ?')) {
+  if (s.startsWith('select * from materi where id_materi = $1')) {
     const m = dbState.materi.find((x) => x.id_materi === Number(params[0]));
-    return [m ? [clone(m)] : [], []];
+    return [m ? [clone(m)] : [], { rowCount: m ? 1 : 0 }];
   }
 
-  if (s.startsWith('select * from materi where id_program = ?')) {
+  if (s.startsWith('select * from materi where id_program = $1')) {
     const rows = dbState.materi
       .filter((x) => x.id_program === Number(params[0]))
       .sort((a, b) => cmpStr(a.kategori, b.kategori) || cmpDesc(a.tanggal_upload, b.tanggal_upload));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.startsWith('insert into materi')) {
     const [id_program, judul, kategori, deskripsi, file_path] = params;
     const id_materi = nextId('materi');
     dbState.materi.push({ id_materi, id_program: Number(id_program), judul, kategori, deskripsi: deskripsi ?? null, file_path: file_path ?? null, tanggal_upload: nowTs() });
-    return [{ insertId: id_materi, affectedRows: 1 }, []];
+    return [[{ id_materi }], { rowCount: 1 }];
   }
 
-  if (s.startsWith('select a.id_user from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota where pp.id_program = ?')) {
+  if (s.startsWith('select a.id_user from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota where pp.id_program = $1')) {
     const idProgram = Number(params[0]);
     const rows = dbState.peserta_pendidikan
       .filter((pp) => pp.id_program === idProgram)
       .map((pp) => dbState.anggota.find((a) => a.id_anggota === pp.id_anggota))
       .filter(Boolean)
       .map((a) => ({ id_user: a.id_user }));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.startsWith('insert into notifikasi (id_user, id_materi, pesan, status_baca) values ?')) {
-    const tuples = params[0] || [];
-    for (const [id_user, id_materi, pesan, status_baca] of tuples) {
+  if (s.startsWith('insert into notifikasi (id_user, id_materi, pesan, status_baca) select u_id, $2, $3, false from unnest($1::int[])')) {
+    const [userIds, id_materi, pesan] = params;
+    if (dbState.constraints.chk_uji_n && pesan === 'Materi baru: GAGAL') throw checkError('chk_uji_n');
+    for (const id_user of userIds || []) {
       dbState.notifikasi.push({
         id_notifikasi: nextId('notifikasi'),
         id_user: Number(id_user),
         id_materi: Number(id_materi),
         pesan,
-        status_baca: status_baca ? 1 : 0,
+        status_baca: false,
         created_at: nowTs(),
       });
     }
-    return [{ affectedRows: tuples.length }, []];
+    return [[], { rowCount: (userIds || []).length }];
   }
 
   if (s.startsWith('update materi set')) {
     const [judul, kategori, deskripsi, file_path, id] = params;
     const m = dbState.materi.find((x) => x.id_materi === Number(id));
     if (m) Object.assign(m, { judul, kategori, deskripsi: deskripsi ?? null, file_path: file_path ?? null });
-    return [{ affectedRows: m ? 1 : 0 }, []];
+    return [[], { rowCount: m ? 1 : 0 }];
   }
 
-  if (s.startsWith('delete from materi where id_materi = ?')) {
+  if (s.startsWith('delete from materi where id_materi = $1')) {
     const id = Number(params[0]);
     const before = dbState.materi.length;
     dbState.materi = dbState.materi.filter((x) => x.id_materi !== id);
     dbState.progres_materi = dbState.progres_materi.filter((x) => x.id_materi !== id);
     dbState.notifikasi = dbState.notifikasi.filter((x) => x.id_materi !== id);
-    return [{ affectedRows: before - dbState.materi.length }, []];
+    return [[], { rowCount: before - dbState.materi.length }];
   }
 
   if (s.includes("coalesce(pm.status, 'belum_diakses') as status_akses")) {
@@ -463,18 +489,18 @@ async function query(rawSql, params = []) {
       }
     }
     rows.sort((a, b) => cmpStr(a.nama_program, b.nama_program) || cmpStr(a.kategori, b.kategori) || cmpStr(a.tanggal_upload, b.tanggal_upload));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- JADWAL ----
-  if (s.includes('from jadwal j join program_pendidikan p on p.id_program = j.id_program where j.id_jadwal = ?')) {
+  if (s.includes('from jadwal j join program_pendidikan p on p.id_program = j.id_program where j.id_jadwal = $1')) {
     const j = dbState.jadwal.find((x) => x.id_jadwal === Number(params[0]));
-    if (!j) return [[], []];
+    if (!j) return [[], { rowCount: 0 }];
     const p = dbState.program_pendidikan.find((x) => x.id_program === j.id_program) || {};
-    return [[clone({ ...j, nama_program: p.nama_program })], []];
+    return [[clone({ ...j, nama_program: p.nama_program })], { rowCount: 1 }];
   }
 
-  if (s.includes('from jadwal j where j.id_program = ?')) {
+  if (s.includes('from jadwal j where j.id_program = $1')) {
     const idProgram = Number(params[0]);
     const rows = dbState.jadwal
       .filter((j) => j.id_program === idProgram)
@@ -484,37 +510,37 @@ async function query(rawSql, params = []) {
         jumlah_absensi: dbState.absensi.filter((a) => a.id_jadwal === j.id_jadwal).length,
         jumlah_evaluasi: dbState.evaluasi.filter((e) => e.id_jadwal === j.id_jadwal).length,
       }));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.startsWith('insert into jadwal')) {
     const [id_program, tanggal, waktu, lokasi, kegiatan] = params;
     const id_jadwal = nextId('jadwal');
     dbState.jadwal.push({ id_jadwal, id_program: Number(id_program), tanggal, waktu: waktu.length === 5 ? `${waktu}:00` : waktu, lokasi, kegiatan });
-    return [{ insertId: id_jadwal, affectedRows: 1 }, []];
+    return [[{ id_jadwal }], { rowCount: 1 }];
   }
 
   if (s.startsWith('update jadwal set')) {
     const [tanggal, waktu, lokasi, kegiatan, id] = params;
     const j = dbState.jadwal.find((x) => x.id_jadwal === Number(id));
     if (j) Object.assign(j, { tanggal, waktu: waktu.length === 5 ? `${waktu}:00` : waktu, lokasi, kegiatan });
-    return [{ affectedRows: j ? 1 : 0 }, []];
+    return [[], { rowCount: j ? 1 : 0 }];
   }
 
-  if (s.includes('from absensi where id_jadwal = ?') && s.includes('from evaluasi where id_jadwal = ?')) {
+  if (s.includes('from absensi where id_jadwal = $1') && s.includes('from evaluasi where id_jadwal = $1')) {
     const id = Number(params[0]);
     const n = dbState.absensi.filter((a) => a.id_jadwal === id).length + dbState.evaluasi.filter((e) => e.id_jadwal === id).length;
-    return [[{ n }], []];
+    return [[{ n }], { rowCount: 1 }];
   }
 
-  if (s.startsWith('delete from jadwal where id_jadwal = ?')) {
+  if (s.startsWith('delete from jadwal where id_jadwal = $1')) {
     const id = Number(params[0]);
     const before = dbState.jadwal.length;
     dbState.jadwal = dbState.jadwal.filter((x) => x.id_jadwal !== id);
-    return [{ affectedRows: before - dbState.jadwal.length }, []];
+    return [[], { rowCount: before - dbState.jadwal.length }];
   }
 
-  if (s.includes('from jadwal j join program_pendidikan p on p.id_program = j.id_program join peserta_pendidikan pp on pp.id_program = j.id_program join anggota a on a.id_anggota = pp.id_anggota where a.id_user = ?')) {
+  if (s.includes('from jadwal j join program_pendidikan p on p.id_program = j.id_program join peserta_pendidikan pp on pp.id_program = j.id_program join anggota a on a.id_anggota = pp.id_anggota where a.id_user = $1')) {
     const idUser = Number(params[0]);
     const an = dbState.anggota.find((a) => a.id_user === idUser);
     const progIds = new Set(an ? dbState.peserta_pendidikan.filter((pp) => pp.id_anggota === an.id_anggota).map((pp) => pp.id_program) : []);
@@ -525,11 +551,11 @@ async function query(rawSql, params = []) {
         const p = dbState.program_pendidikan.find((x) => x.id_program === j.id_program) || {};
         return { ...j, nama_program: p.nama_program };
       });
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- PESERTA ----
-  if (s.includes('from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota join users u on u.id_user = a.id_user where pp.id_program = ?')) {
+  if (s.includes('from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota join users u on u.id_user = a.id_user where pp.id_program = $1')) {
     const idProgram = Number(params[0]);
     const rows = dbState.peserta_pendidikan
       .filter((pp) => pp.id_program === idProgram)
@@ -551,17 +577,17 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpStr(a.nama, b.nama));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.startsWith('select 1 from anggota where id_anggota = ?')) {
+  if (s.startsWith('select 1 from anggota where id_anggota = $1')) {
     const found = dbState.anggota.some((a) => a.id_anggota === Number(params[0]));
-    return [found ? [{ 1: 1 }] : [], []];
+    return [found ? [{ '?column?': 1 }] : [], { rowCount: found ? 1 : 0 }];
   }
 
-  if (s.startsWith('select 1 from peserta_pendidikan where id_anggota = ? and id_program = ?')) {
+  if (s.startsWith('select 1 from peserta_pendidikan where id_anggota = $1 and id_program = $2')) {
     const found = dbState.peserta_pendidikan.some((pp) => pp.id_anggota === Number(params[0]) && pp.id_program === Number(params[1]));
-    return [found ? [{ 1: 1 }] : [], []];
+    return [found ? [{ '?column?': 1 }] : [], { rowCount: found ? 1 : 0 }];
   }
 
   if (s.startsWith('insert into peserta_pendidikan')) {
@@ -572,11 +598,11 @@ async function query(rawSql, params = []) {
     }
     const id_peserta = nextId('peserta_pendidikan');
     dbState.peserta_pendidikan.push({ id_peserta, id_anggota, id_program, tanggal_daftar: curDate(), status: 'aktif' });
-    return [{ insertId: id_peserta, affectedRows: 1 }, []];
+    return [[{ id_peserta }], { rowCount: 1 }];
   }
 
   // ---- ABSENSI ----
-  if (s.includes('left join absensi ab on ab.id_peserta = pp.id_peserta and ab.id_jadwal = ?')) {
+  if (s.includes('left join absensi ab on ab.id_peserta = pp.id_peserta and ab.id_jadwal = $1')) {
     const idJadwal = Number(params[0]);
     const idProgram = Number(params[1]);
     const rows = dbState.peserta_pendidikan
@@ -594,23 +620,24 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpStr(a.nama, b.nama));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.startsWith('insert into absensi')) {
     const [id_peserta, id_jadwal, status, keterangan] = params;
+    if (dbState.constraints.chk_uji_a && keterangan === 'GAGAL') throw checkError('chk_uji_a');
     const existing = dbState.absensi.find((x) => x.id_peserta === Number(id_peserta) && x.id_jadwal === Number(id_jadwal));
     if (existing) {
       existing.status = status;
       existing.keterangan = keterangan ?? null;
-      return [{ insertId: existing.id_absensi, affectedRows: 2 }, []];
+      return [[], { rowCount: 1 }];
     }
     const id_absensi = nextId('absensi');
     dbState.absensi.push({ id_absensi, id_peserta: Number(id_peserta), id_jadwal: Number(id_jadwal), status, keterangan: keterangan ?? null });
-    return [{ insertId: id_absensi, affectedRows: 1 }, []];
+    return [[], { rowCount: 1 }];
   }
 
-  if (s.includes('from absensi ab join peserta_pendidikan pp on pp.id_peserta = ab.id_peserta')) {
+  if (s.includes('from absensi ab join peserta_pendidikan pp on pp.id_peserta = ab.id_peserta') && s.includes('where an.id_user = $1')) {
     const idUser = Number(params[0]);
     const an = dbState.anggota.find((a) => a.id_user === idUser);
     const pesertaIds = new Set(an ? dbState.peserta_pendidikan.filter((pp) => pp.id_anggota === an.id_anggota).map((pp) => pp.id_peserta) : []);
@@ -632,11 +659,11 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpDesc(a.tanggal, b.tanggal) || cmpDesc(a.waktu, b.waktu));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- EVALUASI ----
-  if (s.includes('left join evaluasi e on e.id_peserta = pp.id_peserta and e.id_jadwal = ?')) {
+  if (s.includes('left join evaluasi e on e.id_peserta = pp.id_peserta and e.id_jadwal = $1')) {
     const idJadwal = Number(params[0]);
     const idProgram = Number(params[1]);
     const rows = dbState.peserta_pendidikan
@@ -658,7 +685,7 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpStr(a.nama, b.nama));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.startsWith('insert into evaluasi')) {
@@ -667,7 +694,7 @@ async function query(rawSql, params = []) {
     const existing = dbState.evaluasi.find((x) => x.id_peserta === Number(id_peserta) && x.id_jadwal === Number(id_jadwal));
     if (existing) {
       Object.assign(existing, { id_pencatat: Number(id_pencatat), hasil_penilaian, catatan: catatan ?? null, tanggal_evaluasi: today });
-      return [{ insertId: existing.id_evaluasi, affectedRows: 2 }, []];
+      return [[], { rowCount: 1 }];
     }
     const id_evaluasi = nextId('evaluasi');
     dbState.evaluasi.push({
@@ -679,7 +706,7 @@ async function query(rawSql, params = []) {
       catatan: catatan ?? null,
       tanggal_evaluasi: today,
     });
-    return [{ insertId: id_evaluasi, affectedRows: 1 }, []];
+    return [[], { rowCount: 1 }];
   }
 
   // ---- PROGRES MATERI ----
@@ -689,19 +716,19 @@ async function query(rawSql, params = []) {
     if (existing) {
       existing.status = 'sudah_diakses';
       existing.tanggal_akses = existing.tanggal_akses || nowTs();
-      return [{ insertId: existing.id_progres, affectedRows: 2 }, []];
+      return [[], { rowCount: 1 }];
     }
     const id_progres = nextId('progres_materi');
     dbState.progres_materi.push({ id_progres, id_peserta: Number(id_peserta), id_materi: Number(id_materi), status: 'sudah_diakses', tanggal_akses: nowTs() });
-    return [{ insertId: id_progres, affectedRows: 1 }, []];
+    return [[], { rowCount: 1 }];
   }
 
-  if (s.startsWith('select status, tanggal_akses from progres_materi where id_peserta = ? and id_materi = ?')) {
+  if (s.startsWith('select status, tanggal_akses from progres_materi where id_peserta = $1 and id_materi = $2')) {
     const pm = dbState.progres_materi.find((x) => x.id_peserta === Number(params[0]) && x.id_materi === Number(params[1]));
-    return [pm ? [{ status: pm.status, tanggal_akses: pm.tanggal_akses }] : [], []];
+    return [pm ? [{ status: pm.status, tanggal_akses: pm.tanggal_akses }] : [], { rowCount: pm ? 1 : 0 }];
   }
 
-  if (s.includes('from materi m left join progres_materi pm on pm.id_materi = m.id_materi and pm.id_peserta = ? where m.id_program = ?')) {
+  if (s.includes('from materi m left join progres_materi pm on pm.id_materi = m.id_materi and pm.id_peserta = $1 where m.id_program = $2')) {
     const idPeserta = Number(params[0]);
     const idProgram = Number(params[1]);
     const rows = dbState.materi
@@ -717,7 +744,7 @@ async function query(rawSql, params = []) {
           tanggal_akses: pm ? pm.tanggal_akses : null,
         };
       });
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.includes('from evaluasi e join peserta_pendidikan pp on pp.id_peserta = e.id_peserta')) {
@@ -743,7 +770,7 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpDesc(a.tanggal, b.tanggal));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- LAPORAN ----
@@ -751,8 +778,8 @@ async function query(rawSql, params = []) {
     let idx = 0;
     let idProgram = null;
     let idAnggota = null;
-    if (s.includes('pp.id_program = ?')) idProgram = Number(params[idx++]);
-    if (s.includes('pp.id_anggota = ?')) idAnggota = Number(params[idx++]);
+    if (s.includes('pp.id_program =')) idProgram = Number(params[idx++]);
+    if (s.includes('pp.id_anggota =')) idAnggota = Number(params[idx++]);
 
     const rows = dbState.peserta_pendidikan
       .filter((pp) => (!idProgram || pp.id_program === idProgram) && (!idAnggota || pp.id_anggota === idAnggota))
@@ -773,10 +800,10 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpStr(a.nama_program, b.nama_program) || cmpStr(a.nama, b.nama));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.includes('from absensi ab join jadwal j on j.id_jadwal = ab.id_jadwal where ab.id_peserta in (?)')) {
+  if (s.includes('from absensi ab join jadwal j on j.id_jadwal = ab.id_jadwal where ab.id_peserta = any($1::int[])')) {
     const idSet = new Set((params[0] || []).map(Number));
     const rows = dbState.absensi
       .filter((ab) => idSet.has(ab.id_peserta))
@@ -793,7 +820,7 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpStr(a.tanggal, b.tanggal) || cmpStr(a.waktu, b.waktu));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   if (s.includes('from peserta_pendidikan pp join materi m on m.id_program = pp.id_program left join progres_materi pm')) {
@@ -814,10 +841,10 @@ async function query(rawSql, params = []) {
       }
     }
     rows.sort((a, b) => cmpStr(a.kategori, b.kategori) || cmpStr(a._tanggal_upload, b._tanggal_upload));
-    return [clone(rows.map(({ _tanggal_upload: _, ...r }) => r)), []];
+    return [clone(rows.map(({ _tanggal_upload: _, ...r }) => r)), { rowCount: rows.length }];
   }
 
-  if (s.includes('from evaluasi e join jadwal j on j.id_jadwal = e.id_jadwal join users pc on pc.id_user = e.id_pencatat where e.id_peserta in (?)')) {
+  if (s.includes('from evaluasi e join jadwal j on j.id_jadwal = e.id_jadwal join users pc on pc.id_user = e.id_pencatat where e.id_peserta = any($1::int[])')) {
     const idSet = new Set((params[0] || []).map(Number));
     const rows = dbState.evaluasi
       .filter((e) => idSet.has(e.id_peserta))
@@ -835,11 +862,11 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpStr(a.tanggal, b.tanggal));
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
   // ---- NOTIFIKASI ----
-  if (s.includes('from notifikasi n join materi m on m.id_materi = n.id_materi where n.id_user = ?')) {
+  if (s.includes('from notifikasi n join materi m on m.id_materi = n.id_materi where n.id_user = $1')) {
     const idUser = Number(params[0]);
     const rows = dbState.notifikasi
       .filter((n) => n.id_user === idUser)
@@ -851,36 +878,36 @@ async function query(rawSql, params = []) {
           id_notifikasi: n.id_notifikasi,
           id_materi: n.id_materi,
           pesan: n.pesan,
-          status_baca: n.status_baca,
+          status_baca: Boolean(n.status_baca),
           created_at: n.created_at,
           judul: m.judul,
           kategori: m.kategori,
         };
       });
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.startsWith('select count(*) as belum from notifikasi where id_user = ? and status_baca = false')) {
+  if (s.startsWith('select count(*)::int as belum from notifikasi where id_user = $1 and status_baca = false')) {
     const idUser = Number(params[0]);
     const belum = dbState.notifikasi.filter((n) => n.id_user === idUser && !n.status_baca).length;
-    return [[{ belum }], []];
+    return [[{ belum }], { rowCount: 1 }];
   }
 
-  if (s.startsWith('select id_user, id_materi from notifikasi where id_notifikasi = ?')) {
+  if (s.startsWith('select id_user, id_materi from notifikasi where id_notifikasi = $1')) {
     const n = dbState.notifikasi.find((x) => x.id_notifikasi === Number(params[0]));
-    return [n ? [{ id_user: n.id_user, id_materi: n.id_materi }] : [], []];
+    return [n ? [{ id_user: n.id_user, id_materi: n.id_materi }] : [], { rowCount: n ? 1 : 0 }];
   }
 
-  if (s.startsWith('update notifikasi set status_baca = true where id_notifikasi = ?')) {
+  if (s.startsWith('update notifikasi set status_baca = true where id_notifikasi = $1')) {
     const n = dbState.notifikasi.find((x) => x.id_notifikasi === Number(params[0]));
-    if (n) n.status_baca = 1;
-    return [{ affectedRows: n ? 1 : 0 }, []];
+    if (n) n.status_baca = true;
+    return [[], { rowCount: n ? 1 : 0 }];
   }
 
   // ---- PROFIL ----
-  if (s.includes('from users u left join anggota a on a.id_user = u.id_user where u.id_user = ?')) {
+  if (s.includes('from users u left join anggota a on a.id_user = u.id_user where u.id_user = $1')) {
     const u = dbState.users.find((x) => x.id_user === Number(params[0]));
-    if (!u) return [[], []];
+    if (!u) return [[], { rowCount: 0 }];
     const a = dbState.anggota.find((x) => x.id_user === u.id_user) || {};
     return [[clone({
       id_user: u.id_user,
@@ -893,33 +920,33 @@ async function query(rawSql, params = []) {
       jurusan: a.jurusan ?? null,
       angkatan: a.angkatan ?? null,
       status_keanggotaan: a.status_keanggotaan ?? null,
-    })], []];
+    })], { rowCount: 1 }];
   }
 
-  if (s.startsWith('update users set nama = ?, email = ?, no_hp = ? where id_user = ?')) {
+  if (s.startsWith('update users set nama = $1, email = $2, no_hp = $3 where id_user = $4')) {
     const [nama, email, no_hp, id] = params;
     const u = dbState.users.find((x) => x.id_user === Number(id));
     if (u) Object.assign(u, { nama, email, no_hp: no_hp ?? null });
-    return [{ affectedRows: u ? 1 : 0 }, []];
+    return [[], { rowCount: u ? 1 : 0 }];
   }
 
-  if (s.startsWith('select password from users where id_user = ?')) {
+  if (s.startsWith('select password from users where id_user = $1')) {
     const u = dbState.users.find((x) => x.id_user === Number(params[0]));
-    return [u ? [{ password: u.password }] : [], []];
+    return [u ? [{ password: u.password }] : [], { rowCount: u ? 1 : 0 }];
   }
 
-  if (s.startsWith('update users set password = ? where id_user = ?')) {
+  if (s.startsWith('update users set password = $1 where id_user = $2')) {
     const [password, id] = params;
     const u = dbState.users.find((x) => x.id_user === Number(id));
     if (u) u.password = password;
-    return [{ affectedRows: u ? 1 : 0 }, []];
+    return [[], { rowCount: u ? 1 : 0 }];
   }
 
   // ---- SISWA UTILS ----
-  if (s.includes('from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota join program_pendidikan p on p.id_program = pp.id_program where a.id_user = ?')) {
+  if (s.includes('from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota join program_pendidikan p on p.id_program = pp.id_program where a.id_user = $1')) {
     const idUser = Number(params[0]);
     const an = dbState.anggota.find((a) => a.id_user === idUser);
-    if (!an) return [[], []];
+    if (!an) return [[], { rowCount: 0 }];
     const rows = dbState.peserta_pendidikan
       .filter((pp) => pp.id_anggota === an.id_anggota)
       .map((pp) => {
@@ -936,20 +963,165 @@ async function query(rawSql, params = []) {
         };
       })
       .sort((a, b) => cmpDesc(a.tanggal_mulai, b.tanggal_mulai) || a.id_program - b.id_program);
-    return [clone(rows), []];
+    return [clone(rows), { rowCount: rows.length }];
   }
 
-  if (s.startsWith('select pp.id_peserta from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota where a.id_user = ? and pp.id_program = ?')) {
+  if (s.startsWith('select pp.id_peserta from peserta_pendidikan pp join anggota a on a.id_anggota = pp.id_anggota where a.id_user = $1 and pp.id_program = $2')) {
     const idUser = Number(params[0]);
     const idProgram = Number(params[1]);
     const an = dbState.anggota.find((a) => a.id_user === idUser);
-    if (!an) return [[], []];
+    if (!an) return [[], { rowCount: 0 }];
     const pp = dbState.peserta_pendidikan.find((x) => x.id_anggota === an.id_anggota && x.id_program === idProgram);
-    return [pp ? [{ id_peserta: pp.id_peserta }] : [], []];
+    return [pp ? [{ id_peserta: pp.id_peserta }] : [], { rowCount: pp ? 1 : 0 }];
+  }
+
+  // ---- TEST QUERY HELPERS (blackbox.test.js / modul.test.js) ----
+  if (s === "select role, password from users where email = 'rina@mapala.test'") {
+    const rows = dbState.users.filter((u) => u.email === 'rina@mapala.test').map(({ role, password }) => ({ role, password }));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select status_keanggotaan from anggota where id_anggota = $1') {
+    const a = dbState.anggota.find((x) => x.id_anggota === Number(params[0]));
+    return [a ? [{ status_keanggotaan: a.status_keanggotaan }] : [], { rowCount: a ? 1 : 0 }];
+  }
+  if (s === 'select count(*)::int n from peserta_pendidikan where id_anggota = $1 and id_program = $2') {
+    const n = dbState.peserta_pendidikan.filter((pp) => pp.id_anggota === Number(params[0]) && pp.id_program === Number(params[1])).length;
+    return [[{ n }], { rowCount: 1 }];
+  }
+  if (s === "select id_user from users where email = 'rina@mapala.test'") {
+    const u = dbState.users.find((x) => x.email === 'rina@mapala.test');
+    return [u ? [{ id_user: u.id_user }] : [], { rowCount: u ? 1 : 0 }];
+  }
+  if (s === 'select * from notifikasi where id_materi = $1 and id_user = $2') {
+    const rows = dbState.notifikasi.filter((n) => n.id_materi === Number(params[0]) && n.id_user === Number(params[1]));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select * from absensi where id_jadwal = $1') {
+    const rows = dbState.absensi.filter((a) => a.id_jadwal === Number(params[0]));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select * from evaluasi where id_jadwal = $1') {
+    const rows = dbState.evaluasi.filter((e) => e.id_jadwal === Number(params[0]));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === "select status from progres_materi where id_peserta = 1 and id_materi = 3") {
+    const pm = dbState.progres_materi.find((x) => x.id_peserta === 1 && x.id_materi === 3);
+    return [pm ? [{ status: pm.status }] : [], { rowCount: pm ? 1 : 0 }];
+  }
+  if (s === 'select count(*)::int n from users') return [[{ n: dbState.users.length }], { rowCount: 1 }];
+  if (s === 'select count(*)::int n from jadwal') return [[{ n: dbState.jadwal.length }], { rowCount: 1 }];
+  if (s === 'select id_peserta, status from absensi where id_jadwal = 1 order by id_peserta') {
+    const rows = dbState.absensi.filter((a) => a.id_jadwal === 1).sort((a, b) => a.id_peserta - b.id_peserta).map(({ id_peserta, status }) => ({ id_peserta, status }));
+    return [rows, { rowCount: rows.length }];
+  }
+  if (s === 'select * from progres_materi where id_materi = 5') {
+    return [clone(dbState.progres_materi.filter((x) => x.id_materi === 5)), { rowCount: 0 }];
+  }
+  if (s === 'select tanggal_akses from progres_materi where id_peserta = 1 and id_materi = 3') {
+    const pm = dbState.progres_materi.find((x) => x.id_peserta === 1 && x.id_materi === 3);
+    return [pm ? [{ tanggal_akses: pm.tanggal_akses }] : [], { rowCount: pm ? 1 : 0 }];
+  }
+  if (s === 'select * from notifikasi where id_materi = $1') {
+    const rows = dbState.notifikasi.filter((n) => n.id_materi === Number(params[0]));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select nama from users where id_user = 3') {
+    const u = dbState.users.find((x) => x.id_user === 3);
+    return [u ? [{ nama: u.nama }] : [], { rowCount: u ? 1 : 0 }];
+  }
+  if (s === 'select u.role, u.status, a.nim, a.status_keanggotaan from users u join anggota a on a.id_user = u.id_user where u.id_user = 4') {
+    const u = dbState.users.find((x) => x.id_user === 4);
+    const a = dbState.anggota.find((x) => x.id_user === 4);
+    return [u && a ? [{ role: u.role, status: u.status, nim: a.nim, status_keanggotaan: a.status_keanggotaan }] : [], { rowCount: 1 }];
+  }
+  if (s === "update users set status = 'nonaktif' where id_user = 5") {
+    const u = dbState.users.find((x) => x.id_user === 5);
+    if (u) u.status = 'nonaktif';
+    return [[], { rowCount: u ? 1 : 0 }];
+  }
+  if (s === "update users set status = 'aktif' where id_user = 5") {
+    const u = dbState.users.find((x) => x.id_user === 5);
+    if (u) u.status = 'aktif';
+    return [[], { rowCount: u ? 1 : 0 }];
+  }
+  if (s === "select a.id_anggota, u.id_user from anggota a join users u on u.id_user = a.id_user where u.email = 'tono@mapala.test'") {
+    const u = dbState.users.find((x) => x.email === 'tono@mapala.test');
+    const a = u ? dbState.anggota.find((x) => x.id_user === u.id_user) : null;
+    return [u && a ? [{ id_anggota: a.id_anggota, id_user: u.id_user }] : [], { rowCount: u && a ? 1 : 0 }];
+  }
+  if (s === 'select * from users where id_user = $1') {
+    const u = dbState.users.find((x) => x.id_user === Number(params[0]));
+    return [u ? [clone(u)] : [], { rowCount: u ? 1 : 0 }];
+  }
+  if (s === "select * from users where email = 'gagal@mapala.test'") {
+    const rows = dbState.users.filter((u) => u.email === 'gagal@mapala.test');
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select * from progres_materi where id_materi = $1') {
+    const rows = dbState.progres_materi.filter((x) => x.id_materi === Number(params[0]));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === "select * from materi where judul = 'gagal'") {
+    const rows = dbState.materi.filter((x) => x.judul === 'GAGAL');
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select * from peserta_pendidikan where id_anggota = 3 and id_program = 2') {
+    const rows = dbState.peserta_pendidikan.filter((x) => x.id_anggota === 3 && x.id_program === 2);
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select * from absensi where id_jadwal = 3') {
+    return [clone(dbState.absensi.filter((x) => x.id_jadwal === 3)), { rowCount: 0 }];
+  }
+  if (s === 'select status from absensi where id_jadwal = 1 and id_peserta = 1') {
+    const ab = dbState.absensi.find((x) => x.id_jadwal === 1 && x.id_peserta === 1);
+    return [ab ? [{ status: ab.status }] : [], { rowCount: ab ? 1 : 0 }];
+  }
+  if (s === 'select id_peserta, hasil_penilaian, tanggal_evaluasi from evaluasi where id_jadwal = 1') {
+    const rows = dbState.evaluasi.filter((x) => x.id_jadwal === 1).map(({ id_peserta, hasil_penilaian, tanggal_evaluasi }) => ({ id_peserta, hasil_penilaian, tanggal_evaluasi }));
+    return [clone(rows), { rowCount: rows.length }];
+  }
+  if (s === 'select count(*)::int n from peserta_pendidikan') {
+    return [[{ n: dbState.peserta_pendidikan.length }], { rowCount: 1 }];
+  }
+  if (s === 'delete from notifikasi where id_materi in (select id_materi from materi where id_program = 3)') {
+    const matIds = new Set(dbState.materi.filter((m) => m.id_program === 3).map((m) => m.id_materi));
+    dbState.notifikasi = dbState.notifikasi.filter((n) => !matIds.has(n.id_materi));
+    return [[], { rowCount: 0 }];
+  }
+  if (s === 'delete from materi where id_program = 3') {
+    dbState.materi = dbState.materi.filter((m) => m.id_program !== 3);
+    return [[], { rowCount: 0 }];
+  }
+  if (s === 'select id_notifikasi from notifikasi where id_user = 4 and status_baca = false limit 1') {
+    const n = dbState.notifikasi.find((x) => x.id_user === 4 && !x.status_baca);
+    return [n ? [{ id_notifikasi: n.id_notifikasi }] : [], { rowCount: n ? 1 : 0 }];
+  }
+  if (s === 'select id_notifikasi from notifikasi where id_user = 3 limit 1') {
+    const n = dbState.notifikasi.find((x) => x.id_user === 3);
+    return [n ? [{ id_notifikasi: n.id_notifikasi }] : [], { rowCount: n ? 1 : 0 }];
+  }
+  if (s === 'select count(*)::int n from notifikasi where id_user = 4') {
+    return [[{ n: dbState.notifikasi.filter((x) => x.id_user === 4).length }], { rowCount: 1 }];
+  }
+  if (s === 'select count(*)::int n from evaluasi where id_peserta = 2') {
+    return [[{ n: dbState.evaluasi.filter((x) => x.id_peserta === 2).length }], { rowCount: 1 }];
+  }
+  if (s === 'select count(*)::int n from anggota') {
+    return [[{ n: dbState.anggota.length }], { rowCount: 1 }];
+  }
+  if (s === 'select count(*)::int aktif from program_pendidikan where current_date between tanggal_mulai and tanggal_selesai') {
+    const today = curDate();
+    const aktif = dbState.program_pendidikan.filter((p) => p.tanggal_mulai && p.tanggal_selesai && p.tanggal_mulai <= today && today <= p.tanggal_selesai).length;
+    return [[{ aktif }], { rowCount: 1 }];
+  }
+  if (s === "select count(*)::int n from absensi ab join peserta_pendidikan pp on pp.id_peserta = ab.id_peserta where pp.id_anggota = 2 and ab.status = 'hadir'") {
+    const ppIds = new Set(dbState.peserta_pendidikan.filter((p) => p.id_anggota === 2).map((p) => p.id_peserta));
+    const n = dbState.absensi.filter((a) => ppIds.has(a.id_peserta) && a.status === 'hadir').length;
+    return [[{ n }], { rowCount: 1 }];
   }
 
   console.warn('[AI Studio MockDB] Unhandled SQL query:', sql);
-  return [[], []];
+  return [[], { rowCount: 0 }];
 }
 
 const mockPool = {
@@ -966,4 +1138,4 @@ const mockPool = {
   },
 };
 
-module.exports = { mockPool };
+module.exports = { mockPool, resetMockStore };

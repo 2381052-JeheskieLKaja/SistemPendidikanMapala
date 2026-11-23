@@ -12,10 +12,10 @@ const RULES = {
 
 const SELECT_PROGRAM = `
   SELECT p.*,
-    (SELECT COUNT(*) FROM peserta_pendidikan pp WHERE pp.id_program = p.id_program) AS jumlah_peserta,
-    (SELECT COUNT(*) FROM materi m WHERE m.id_program = p.id_program) AS jumlah_materi,
-    (SELECT COUNT(*) FROM jadwal j WHERE j.id_program = p.id_program) AS jumlah_jadwal,
-    (SELECT COUNT(*) FROM kurikulum k WHERE k.id_program = p.id_program) AS jumlah_kurikulum
+    (SELECT COUNT(*)::int FROM peserta_pendidikan pp WHERE pp.id_program = p.id_program) AS jumlah_peserta,
+    (SELECT COUNT(*)::int FROM materi m WHERE m.id_program = p.id_program) AS jumlah_materi,
+    (SELECT COUNT(*)::int FROM jadwal j WHERE j.id_program = p.id_program) AS jumlah_jadwal,
+    (SELECT COUNT(*)::int FROM kurikulum k WHERE k.id_program = p.id_program) AS jumlah_kurikulum
   FROM program_pendidikan p`;
 
 function readBody(body) {
@@ -27,7 +27,7 @@ function readBody(body) {
 }
 
 async function findProgram(id) {
-  const [rows] = await pool.query(`${SELECT_PROGRAM} WHERE p.id_program = ?`, [id]);
+  const [rows] = await pool.query(`${SELECT_PROGRAM} WHERE p.id_program = $1`, [id]);
   if (!rows[0]) throw notFound('Program tidak ditemukan');
   return rows[0];
 }
@@ -47,10 +47,10 @@ async function detail(req, res) {
 async function create(req, res) {
   const d = readBody(req.body);
   const [r] = await pool.query(
-    'INSERT INTO program_pendidikan (nama_program, jenis, deskripsi, tanggal_mulai, tanggal_selesai) VALUES (?, ?, ?, ?, ?)',
+    'INSERT INTO program_pendidikan (nama_program, jenis, deskripsi, tanggal_mulai, tanggal_selesai) VALUES ($1, $2, $3, $4, $5) RETURNING id_program',
     [d.nama_program, d.jenis, d.deskripsi, d.tanggal_mulai, d.tanggal_selesai],
   );
-  return created(res, await findProgram(r.insertId), 'Program berhasil ditambahkan');
+  return created(res, await findProgram(r[0].id_program), 'Program berhasil ditambahkan');
 }
 
 /** PUT /api/program/:id */
@@ -59,7 +59,7 @@ async function update(req, res) {
   const d = readBody(req.body);
   await findProgram(id);
   await pool.query(
-    'UPDATE program_pendidikan SET nama_program = ?, jenis = ?, deskripsi = ?, tanggal_mulai = ?, tanggal_selesai = ? WHERE id_program = ?',
+    'UPDATE program_pendidikan SET nama_program = $1, jenis = $2, deskripsi = $3, tanggal_mulai = $4, tanggal_selesai = $5 WHERE id_program = $6',
     [d.nama_program, d.jenis, d.deskripsi, d.tanggal_mulai, d.tanggal_selesai, id],
   );
   return ok(res, await findProgram(id), 'Program berhasil diperbarui');
@@ -72,7 +72,7 @@ async function remove(req, res) {
   if (p.jumlah_kurikulum || p.jumlah_materi || p.jumlah_jadwal || p.jumlah_peserta) {
     throw conflict('Program masih memiliki kurikulum, materi, jadwal, atau peserta sehingga tidak dapat dihapus');
   }
-  await pool.query('DELETE FROM program_pendidikan WHERE id_program = ?', [id]);
+  await pool.query('DELETE FROM program_pendidikan WHERE id_program = $1', [id]);
   return ok(res, null, 'Program berhasil dihapus');
 }
 

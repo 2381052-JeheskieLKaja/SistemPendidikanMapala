@@ -8,7 +8,7 @@ Spesifikasi: [`implementation.md`](implementation.md). Checklist pembangunan: [`
 |---|---|
 | Front-end | React 19 + Vite, React Router 7, Axios, Tailwind CSS 4 |
 | Back-end | Node.js + Express 5 (REST API) |
-| Database | MySQL (driver `mysql2`, query terparameter, transaksi) |
+| Database | PostgreSQL (driver `pg`, query terparameter, transaksi) |
 | Keamanan | JWT (`id_user`, `role`), bcrypt, helmet, CORS terbatas, express-rate-limit (login), multer (unggah dibatasi) |
 
 Peran akun: **Admin**, **Pengurus**, **Siswa**. **Guest** tanpa akun hanya melihat `/publik`.
@@ -16,20 +16,18 @@ Peran akun: **Admin**, **Pengurus**, **Siswa**. **Guest** tanpa akun hanya melih
 ## Prasyarat
 
 - Node.js 20 atau lebih baru (diuji dengan Node 24).
-- MySQL 8+ terpasang **langsung di mesin lokal (tanpa Docker)**. Contoh macOS: `brew install mysql && brew services start mysql`.
+- PostgreSQL 14+ terpasang di mesin lokal atau server eksternal. Contoh macOS: `brew install postgresql@16 && brew services start postgresql@16`.
 
 ## Instalasi
 
 ### 1. Database
 
-Buat database dan user MySQL (ganti password):
+Buat database dan user PostgreSQL (ganti password):
 
 ```sql
-CREATE DATABASE mapala_pendidikan CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-CREATE DATABASE mapala_pendidikan_test CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci; -- khusus npm test
-CREATE USER 'mapala'@'localhost' IDENTIFIED BY 'ganti_password';
-GRANT ALL PRIVILEGES ON mapala_pendidikan.* TO 'mapala'@'localhost';
-GRANT ALL PRIVILEGES ON mapala_pendidikan_test.* TO 'mapala'@'localhost';
+CREATE USER mapala WITH PASSWORD 'ganti_password';
+CREATE DATABASE mapala_pendidikan OWNER mapala ENCODING 'UTF8';
+CREATE DATABASE mapala_pendidikan_test OWNER mapala ENCODING 'UTF8'; -- khusus npm test
 ```
 
 ### 2. Backend (http://localhost:4100)
@@ -45,15 +43,15 @@ npm run dev               # atau: npm start
 `npm run db:reset` setara dengan menjalankan kedua file SQL secara manual:
 
 ```bash
-mysql -u mapala -p mapala_pendidikan < db/schema.sql
-mysql -u mapala -p mapala_pendidikan < db/seed.sql
+psql -h 127.0.0.1 -p 5432 -U mapala -d mapala_pendidikan -f db/schema.sql
+psql -h 127.0.0.1 -p 5432 -U mapala -d mapala_pendidikan -f db/seed.sql
 ```
 
 Variabel `backend/.env`:
 
 | Variabel | Fungsi |
 |---|---|
-| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Koneksi MySQL |
+| `DB_HOST`, `DB_PORT`, `DB_USER`, `DB_PASSWORD`, `DB_NAME` | Koneksi PostgreSQL (default port `5432`) |
 | `DB_TEST_NAME` | Database terpisah untuk `npm test` (isinya di-reset setiap test) |
 | `JWT_SECRET`, `JWT_EXPIRES_IN` | Penandatanganan token (default 8 jam) |
 | `PORT` | Port API (default 4100) |

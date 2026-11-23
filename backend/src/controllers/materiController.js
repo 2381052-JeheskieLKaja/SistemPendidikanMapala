@@ -20,7 +20,7 @@ function serialize({ file_path: filePath, ...m }) {
 }
 
 async function findMateri(id, conn = pool) {
-  const [rows] = await conn.query('SELECT * FROM materi WHERE id_materi = ?', [id]);
+  const [rows] = await conn.query('SELECT * FROM materi WHERE id_materi = $1', [id]);
   if (!rows[0]) throw notFound('Materi tidak ditemukan');
   return rows[0];
 }
@@ -40,7 +40,7 @@ async function list(req, res) {
   if (!req.query.id_program) throw badRequest('Parameter id_program wajib diisi');
   const idProgram = toId(req.query.id_program, 'ID program');
   await findProgram(idProgram);
-  const [rows] = await pool.query('SELECT * FROM materi WHERE id_program = ? ORDER BY kategori, tanggal_upload DESC', [idProgram]);
+  const [rows] = await pool.query('SELECT * FROM materi WHERE id_program = $1 ORDER BY kategori, tanggal_upload DESC', [idProgram]);
   return ok(res, rows.map(serialize));
 }
 
@@ -51,20 +51,24 @@ const create = cleanupUpload(async (req, res) => {
 
   const result = await withTransaction(async (conn) => {
     const [r] = await conn.query(
-      'INSERT INTO materi (id_program, judul, kategori, deskripsi, file_path) VALUES (?, ?, ?, ?, ?)',
+      'INSERT INTO materi (id_program, judul, kategori, deskripsi, file_path) VALUES ($1, $2, $3, $4, $5) RETURNING id_materi',
       [d.id_program, d.judul, d.kategori, d.deskripsi, req.file?.filename ?? null],
     );
+    const idMateri = r[0].id_materi;
     const [siswa] = await conn.query(
       `SELECT a.id_user FROM peserta_pendidikan pp JOIN anggota a ON a.id_anggota = pp.id_anggota
-        WHERE pp.id_program = ?`,
+        WHERE pp.id_program = $1`,
       [d.id_program],
     );
     if (siswa.length) {
       const pesan = `Materi baru: ${d.judul}`.slice(0, 255);
-      await conn.query('INSERT INTO notifikasi (id_user, id_materi, pesan, status_baca) VALUES ?',
-        [siswa.map((s) => [s.id_user, r.insertId, pesan, false])]);
+      await conn.query(
+        `INSERT INTO notifikasi (id_user, id_materi, pesan, status_baca)
+         SELECT u_id, $2, $3, FALSE FROM UNNEST($1::int[]) AS u_id`,
+        [siswa.map((s) => s.id_user), idMateri, pesan],
+      );
     }
-    return { id_materi: r.insertId, jumlah_notifikasi: siswa.length };
+    return { id_materi: idMateri, jumlah_notifikasi: siswa.length };
   });
 
   const materi = serialize(await findMateri(result.id_materi));
@@ -78,7 +82,7 @@ const update = cleanupUpload(async (req, res) => {
   const d = validate(req.body, RULES);
   const existing = await findMateri(id);
   const filePath = req.file ? req.file.filename : existing.file_path;
-  await pool.query('UPDATE materi SET judul = ?, kategori = ?, deskripsi = ?, file_path = ? WHERE id_materi = ?',
+  await pool.query('UPDATE materi SET judul = $1, kategori = $2, deskripsi = $3, file_path = $4 WHERE id_materi = $5',
     [d.judul, d.kategori, d.deskripsi, filePath, id]);
   if (req.file && existing.file_path) await removeFile(existing.file_path);
   return ok(res, serialize(await findMateri(id)), 'Materi berhasil diperbarui');
@@ -88,7 +92,7 @@ const update = cleanupUpload(async (req, res) => {
 async function remove(req, res) {
   const id = toId(req.params.id, 'ID materi');
   const existing = await findMateri(id);
-  await pool.query('DELETE FROM materi WHERE id_materi = ?', [id]);
+  await pool.query('DELETE FROM materi WHERE id_materi = $1', [id]);
   await removeFile(existing.file_path);
   return ok(res, null, 'Materi berhasil dihapus');
 }
@@ -101,7 +105,7 @@ async function saya(req, res) {
        FROM materi m
        JOIN program_pendidikan p ON p.id_program = m.id_program
        JOIN peserta_pendidikan pp ON pp.id_program = m.id_program
-       JOIN anggota a ON a.id_anggota = pp.id_anggota AND a.id_user = ?
+       JOIN anggota a ON a.id_anggota = pp.id_anggota AND a.id_user = $1
        LEFT JOIN progres_materi pm ON pm.id_materi = m.id_materi AND pm.id_peserta = pp.id_peserta
       ORDER BY p.nama_program, m.kategori, m.tanggal_upload`,
     [req.user.id_user],

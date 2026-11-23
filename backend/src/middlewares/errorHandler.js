@@ -18,9 +18,13 @@ function errorHandler(err, req, res, _next) {
   }
   if (err.type === 'entity.parse.failed') return fail(res, 400, 'Format data tidak valid');
   if (err.type === 'entity.too.large') return fail(res, 413, 'Data terlalu besar');
-  if (err.code === 'ER_DUP_ENTRY') return fail(res, 409, 'Data sudah terdaftar');
-  if (err.code === 'ER_ROW_IS_REFERENCED_2') return fail(res, 409, 'Data tidak dapat dihapus karena masih digunakan oleh data lain');
-  if (err.code === 'ER_NO_REFERENCED_ROW_2') return fail(res, 400, 'Data referensi tidak ditemukan');
+  if (err.code === '23505') return fail(res, 409, 'Data sudah terdaftar');
+  if (err.code === '23503') {
+    if (String(err.detail || '').includes('is still referenced')) {
+      return fail(res, 409, 'Data tidak dapat dihapus karena masih digunakan oleh data lain');
+    }
+    return fail(res, 400, 'Data referensi tidak ditemukan');
+  }
 
   // Detail teknis hanya dicatat di log server, tidak dikirim ke klien.
   console.error(`[${new Date().toISOString()}] ${req.method} ${req.originalUrl}`, err);

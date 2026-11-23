@@ -10,8 +10,8 @@ async function pesertaDenganAbsensi(jadwal, conn = pool) {
        FROM peserta_pendidikan pp
        JOIN anggota an ON an.id_anggota = pp.id_anggota
        JOIN users u ON u.id_user = an.id_user
-       LEFT JOIN absensi ab ON ab.id_peserta = pp.id_peserta AND ab.id_jadwal = ?
-      WHERE pp.id_program = ? ORDER BY u.nama`,
+       LEFT JOIN absensi ab ON ab.id_peserta = pp.id_peserta AND ab.id_jadwal = $1
+      WHERE pp.id_program = $2 ORDER BY u.nama`,
     [jadwal.id_jadwal, jadwal.id_program],
   );
   return rows;
@@ -56,8 +56,9 @@ async function simpan(req, res) {
   await withTransaction(async (conn) => {
     for (const row of rows) {
       await conn.query(
-        `INSERT INTO absensi (id_peserta, id_jadwal, status, keterangan) VALUES (?, ?, ?, ?)
-         ON DUPLICATE KEY UPDATE status = VALUES(status), keterangan = VALUES(keterangan)`,
+        `INSERT INTO absensi (id_peserta, id_jadwal, status, keterangan) VALUES ($1, $2, $3, $4)
+         ON CONFLICT (id_peserta, id_jadwal) DO UPDATE
+         SET status = EXCLUDED.status, keterangan = EXCLUDED.keterangan`,
         row,
       );
     }
@@ -76,7 +77,7 @@ async function saya(req, res) {
        JOIN anggota an ON an.id_anggota = pp.id_anggota
        JOIN jadwal j ON j.id_jadwal = ab.id_jadwal
        JOIN program_pendidikan p ON p.id_program = pp.id_program
-      WHERE an.id_user = ? ORDER BY j.tanggal DESC, j.waktu DESC`,
+      WHERE an.id_user = $1 ORDER BY j.tanggal DESC, j.waktu DESC`,
     [req.user.id_user],
   );
   return ok(res, { rekap: rekap(riwayat), riwayat });

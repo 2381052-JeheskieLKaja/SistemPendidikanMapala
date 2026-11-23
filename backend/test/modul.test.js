@@ -65,7 +65,7 @@ describe('M02 Anggota', () => {
     assert.equal(del.body.message, 'Anggota memiliki data pendidikan sehingga tidak dapat dihapus');
     const [tono] = await q("SELECT a.id_anggota, u.id_user FROM anggota a JOIN users u ON u.id_user = a.id_user WHERE u.email = 'tono@mapala.test'");
     assert.equal((await call('admin', 'delete', `/api/anggota/${tono.id_anggota}`)).status, 200);
-    assert.equal((await q('SELECT * FROM users WHERE id_user = ?', [tono.id_user])).length, 0);
+    assert.equal((await q('SELECT * FROM users WHERE id_user = $1', [tono.id_user])).length, 0);
     assert.equal((await call('admin', 'delete', `/api/anggota/${tono.id_anggota}`)).status, 404);
   });
   test('rollback transaksi: INSERT anggota gagal → tidak ada user yatim', async () => {
@@ -77,7 +77,7 @@ describe('M02 Anggota', () => {
       assert.doesNotMatch(JSON.stringify(res.body), /chk_uji|SQL|constraint/i);
       assert.equal((await q("SELECT * FROM users WHERE email = 'gagal@mapala.test'")).length, 0);
     } finally {
-      await q('ALTER TABLE anggota DROP CHECK chk_uji');
+      await q('ALTER TABLE anggota DROP CONSTRAINT chk_uji');
     }
   });
 });
@@ -149,8 +149,8 @@ describe('M05 Materi', () => {
     await call('budi', 'post', '/api/progres/tandai-akses', { id_materi: id });
     const del = await call('pengurus', 'delete', `/api/materi/${id}`);
     assert.equal(del.status, 200);
-    assert.equal((await q('SELECT * FROM progres_materi WHERE id_materi = ?', [id])).length, 0);
-    assert.equal((await q('SELECT * FROM notifikasi WHERE id_materi = ?', [id])).length, 0);
+    assert.equal((await q('SELECT * FROM progres_materi WHERE id_materi = $1', [id])).length, 0);
+    assert.equal((await q('SELECT * FROM notifikasi WHERE id_materi = $1', [id])).length, 0);
     assert.equal(filesInUploads().length, oldFiles.length - 1);
     assert.equal((await call('pengurus', 'delete', `/api/materi/${id}`)).status, 404);
   });
@@ -165,7 +165,7 @@ describe('M05 Materi', () => {
       assert.equal(res.status, 500);
       assert.equal((await q("SELECT * FROM materi WHERE judul = 'GAGAL'")).length, 0);
     } finally {
-      await q('ALTER TABLE notifikasi DROP CHECK chk_uji_n');
+      await q('ALTER TABLE notifikasi DROP CONSTRAINT chk_uji_n');
     }
   });
 });
@@ -231,7 +231,7 @@ describe('M08 Absensi', () => {
       const [row] = await q('SELECT status FROM absensi WHERE id_jadwal = 1 AND id_peserta = 1');
       assert.equal(row.status, 'hadir');
     } finally {
-      await q('ALTER TABLE absensi DROP CHECK chk_uji_a');
+      await q('ALTER TABLE absensi DROP CONSTRAINT chk_uji_a');
     }
   });
 });
@@ -259,7 +259,7 @@ describe('M09 Evaluasi', () => {
 describe('M10 Laporan', () => {
   test('filter anggota, kombinasi, tanpa filter, dan tanpa data', async () => {
     const semua = (await call('admin', 'get', '/api/laporan')).body.data;
-    const [{ n }] = await q('SELECT COUNT(*) n FROM peserta_pendidikan');
+    const [{ n }] = await q('SELECT COUNT(*)::int n FROM peserta_pendidikan');
     assert.equal(semua.length, n);
     const budi = (await call('admin', 'get', '/api/laporan?id_anggota=1')).body.data;
     assert.equal(budi.length, 2);
@@ -297,7 +297,7 @@ describe('M11 Akses materi & notifikasi', () => {
     assert.equal((await call('sari', 'put', '/api/notifikasi/99999/dibaca')).status, 404);
     const list = (await call('sari', 'get', '/api/notifikasi')).body.data.items;
     assert.ok(list.length > 0);
-    const [{ n }] = await q('SELECT COUNT(*) n FROM notifikasi WHERE id_user = 4');
+    const [{ n }] = await q('SELECT COUNT(*)::int n FROM notifikasi WHERE id_user = 4');
     assert.equal(list.length, n);
   });
   test('materi tidak ada → 404', async () => {
@@ -320,7 +320,7 @@ describe('M12–M14 Siswa tanpa program dan isolasi data', () => {
   });
   test('riwayat absensi & evaluasi Siswa A tidak memuat data Siswa B', async () => {
     const sari = (await call('sari', 'get', '/api/progres/saya')).body.data.evaluasi;
-    const [{ n }] = await q('SELECT COUNT(*) n FROM evaluasi WHERE id_peserta = 2');
+    const [{ n }] = await q('SELECT COUNT(*)::int n FROM evaluasi WHERE id_peserta = 2');
     assert.equal(sari.length, n);
   });
 });
@@ -348,10 +348,10 @@ describe('M17 Dashboard', () => {
   test('admin/pengurus: total anggota + rincian 7 tahap, program aktif, jadwal terdekat', async () => {
     for (const who of ['admin', 'pengurus']) {
       const d = (await call(who, 'get', '/api/dashboard')).body.data;
-      const [{ n }] = await q('SELECT COUNT(*) n FROM anggota');
+      const [{ n }] = await q('SELECT COUNT(*)::int n FROM anggota');
       assert.equal(d.total_anggota, n);
       assert.equal(Object.keys(d.rincian_keanggotaan).length, 7);
-      const [{ aktif }] = await q('SELECT COUNT(*) aktif FROM program_pendidikan WHERE CURDATE() BETWEEN tanggal_mulai AND tanggal_selesai');
+      const [{ aktif }] = await q('SELECT COUNT(*)::int aktif FROM program_pendidikan WHERE CURRENT_DATE BETWEEN tanggal_mulai AND tanggal_selesai');
       assert.equal(d.program_aktif.length, aktif);
       assert.ok(d.jadwal_terdekat.every((j) => j.tanggal >= new Date().toISOString().slice(0, 10)));
     }
@@ -359,7 +359,7 @@ describe('M17 Dashboard', () => {
   test('siswa: progres, kehadiran sesuai tabel', async () => {
     const d = (await call('sari', 'get', '/api/dashboard')).body.data;
     assert.equal(d.terdaftar, true);
-    const [{ n }] = await q("SELECT COUNT(*) n FROM absensi ab JOIN peserta_pendidikan pp ON pp.id_peserta = ab.id_peserta WHERE pp.id_anggota = 2 AND ab.status = 'hadir'");
+    const [{ n }] = await q("SELECT COUNT(*)::int n FROM absensi ab JOIN peserta_pendidikan pp ON pp.id_peserta = ab.id_peserta WHERE pp.id_anggota = 2 AND ab.status = 'hadir'");
     assert.equal(d.kehadiran.hadir, n);
     assert.equal(d.program_saya.length, 1);
     assert.ok(d.progres.persen >= 0 && d.progres.persen <= 100);

@@ -16,7 +16,7 @@ async function list(req, res) {
        FROM peserta_pendidikan pp
        JOIN anggota a ON a.id_anggota = pp.id_anggota
        JOIN users u ON u.id_user = a.id_user
-      WHERE pp.id_program = ? ORDER BY u.nama`,
+      WHERE pp.id_program = $1 ORDER BY u.nama`,
     [idProgram],
   );
   return ok(res, rows);
@@ -28,22 +28,22 @@ async function create(req, res) {
     id_anggota: { required: true, type: 'int', label: 'Siswa' },
     id_program: { required: true, type: 'int', label: 'Program' },
   });
-  const [anggota] = await pool.query('SELECT 1 FROM anggota WHERE id_anggota = ?', [d.id_anggota]);
+  const [anggota] = await pool.query('SELECT 1 FROM anggota WHERE id_anggota = $1', [d.id_anggota]);
   if (!anggota.length) throw notFound('Anggota tidak ditemukan');
   await findProgram(d.id_program);
 
   // cekPendaftaranGanda; UNIQUE (id_anggota, id_program) tetap menjaga bila ada request bersamaan.
-  const [dup] = await pool.query('SELECT 1 FROM peserta_pendidikan WHERE id_anggota = ? AND id_program = ?',
+  const [dup] = await pool.query('SELECT 1 FROM peserta_pendidikan WHERE id_anggota = $1 AND id_program = $2',
     [d.id_anggota, d.id_program]);
   if (dup.length) throw conflict(DUPLIKAT);
   try {
     const [r] = await pool.query(
-      "INSERT INTO peserta_pendidikan (id_anggota, id_program, tanggal_daftar, status) VALUES (?, ?, CURDATE(), 'aktif')",
+      "INSERT INTO peserta_pendidikan (id_anggota, id_program, tanggal_daftar, status) VALUES ($1, $2, CURRENT_DATE, 'aktif') RETURNING id_peserta",
       [d.id_anggota, d.id_program],
     );
-    return created(res, { id_peserta: r.insertId }, 'Siswa berhasil didaftarkan ke program');
+    return created(res, { id_peserta: r[0].id_peserta }, 'Siswa berhasil didaftarkan ke program');
   } catch (err) {
-    if (err.code === 'ER_DUP_ENTRY') throw conflict(DUPLIKAT);
+    if (err.code === '23505') throw conflict(DUPLIKAT);
     throw err;
   }
 }

@@ -12,7 +12,7 @@ async function getKeikutsertaan(idUser, conn = pool) {
        FROM peserta_pendidikan pp
        JOIN anggota a ON a.id_anggota = pp.id_anggota
        JOIN program_pendidikan p ON p.id_program = pp.id_program
-      WHERE a.id_user = ?
+      WHERE a.id_user = $1
       ORDER BY p.tanggal_mulai DESC, p.id_program`,
     [idUser],
   );
@@ -24,7 +24,7 @@ async function getIdPeserta(idUser, idProgram, conn = pool) {
   const [rows] = await conn.query(
     `SELECT pp.id_peserta FROM peserta_pendidikan pp
        JOIN anggota a ON a.id_anggota = pp.id_anggota
-      WHERE a.id_user = ? AND pp.id_program = ?`,
+      WHERE a.id_user = $1 AND pp.id_program = $2`,
     [idUser, idProgram],
   );
   return rows[0]?.id_peserta ?? null;

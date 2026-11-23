@@ -37,9 +37,9 @@ app.use('/api/dashboard', require('./routes/dashboard'));
 
 app.use('/api', notFoundHandler);
 
-// Serve built React frontend in single-process AI Studio mode
+// Serve built React frontend in single-process AI Studio / standalone Node mode (on Vercel, CDN serves frontend/dist)
 const distDir = path.resolve(__dirname, '../../frontend/dist');
-if (fs.existsSync(distDir)) {
+if (!process.env.VERCEL && fs.existsSync(distDir)) {
   app.use(express.static(distDir));
   app.get('/{*splat}', (_req, res) => {
     res.sendFile(path.join(distDir, 'index.html'));

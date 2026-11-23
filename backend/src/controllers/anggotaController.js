@@ -17,19 +17,19 @@ const RULES = {
 const SELECT_ANGGOTA = `
   SELECT a.id_anggota, a.id_user, a.nim, a.jurusan, a.angkatan, a.kontak, a.status_keanggotaan,
          u.nama, u.email, u.no_hp, u.status AS status_akun,
-         (SELECT COUNT(*) FROM peserta_pendidikan pp WHERE pp.id_anggota = a.id_anggota) AS jumlah_program
+         (SELECT COUNT(*)::int FROM peserta_pendidikan pp WHERE pp.id_anggota = a.id_anggota) AS jumlah_program
     FROM anggota a JOIN users u ON u.id_user = a.id_user`;
 
 async function findAnggota(id, conn = pool) {
-  const [rows] = await conn.query(`${SELECT_ANGGOTA} WHERE a.id_anggota = ?`, [id]);
+  const [rows] = await conn.query(`${SELECT_ANGGOTA} WHERE a.id_anggota = $1`, [id]);
   return rows[0] || null;
 }
 
 async function assertUnik(conn, { email, nim }, exceptUser = 0, exceptAnggota = 0) {
-  const [e] = await conn.query('SELECT 1 FROM users WHERE email = ? AND id_user <> ?', [email, exceptUser]);
+  const [e] = await conn.query('SELECT 1 FROM users WHERE email = $1 AND id_user <> $2', [email, exceptUser]);
   if (e.length) throw conflict('Email sudah digunakan');
   if (nim) {
-    const [n] = await conn.query('SELECT 1 FROM anggota WHERE nim = ? AND id_anggota <> ?', [nim, exceptAnggota]);
+    const [n] = await conn.query('SELECT 1 FROM anggota WHERE nim = $1 AND id_anggota <> $2', [nim, exceptAnggota]);
     if (n.length) throw conflict('NIM sudah digunakan');
   }
 }
@@ -40,8 +40,8 @@ async function list(req, res) {
   const params = [];
   let where = '';
   if (q) {
-    where = 'WHERE u.nama LIKE ? OR u.email LIKE ? OR a.nim LIKE ?';
-    params.push(`%${q}%`, `%${q}%`, `%${q}%`);
+    where = 'WHERE u.nama ILIKE $1 OR u.email ILIKE $1 OR a.nim ILIKE $1';
+    params.push(`%${q}%`);
   }
   const [rows] = await pool.query(`${SELECT_ANGGOTA} ${where} ORDER BY u.nama`, params);
   return ok(res, rows);
@@ -56,14 +56,14 @@ async function create(req, res) {
     await assertUnik(conn, data);
     const hash = await hashPassword(data.password || passwordSementara);
     const [u] = await conn.query(
-      "INSERT INTO users (nama, email, password, no_hp, role, status) VALUES (?, ?, ?, ?, 'siswa', 'aktif')",
+      "INSERT INTO users (nama, email, password, no_hp, role, status) VALUES ($1, $2, $3, $4, 'siswa', 'aktif') RETURNING id_user",
       [data.nama, data.email, hash, data.no_hp],
     );
     const [a] = await conn.query(
-      'INSERT INTO anggota (id_user, nim, jurusan, angkatan, kontak, status_keanggotaan) VALUES (?, ?, ?, ?, ?, ?)',
-      [u.insertId, data.nim, data.jurusan, data.angkatan, data.kontak, data.status_keanggotaan],
+      'INSERT INTO anggota (id_user, nim, jurusan, angkatan, kontak, status_keanggotaan) VALUES ($1, $2, $3, $4, $5, $6) RETURNING id_anggota',
+      [u[0].id_user, data.nim, data.jurusan, data.angkatan, data.kontak, data.status_keanggotaan],
     );
-    return a.insertId;
+    return a[0].id_anggota;
   });
 
   const anggota = await findAnggota(id);
@@ -84,10 +84,10 @@ async function update(req, res) {
     const existing = await findAnggota(id, conn);
     if (!existing) throw notFound('Anggota tidak ditemukan');
     await assertUnik(conn, data, existing.id_user, id);
-    await conn.query('UPDATE users SET nama = ?, email = ?, no_hp = ?, status = ? WHERE id_user = ?',
+    await conn.query('UPDATE users SET nama = $1, email = $2, no_hp = $3, status = $4 WHERE id_user = $5',
       [data.nama, data.email, data.no_hp, data.status_akun || existing.status_akun, existing.id_user]);
     await conn.query(
-      'UPDATE anggota SET nim = ?, jurusan = ?, angkatan = ?, kontak = ?, status_keanggotaan = ? WHERE id_anggota = ?',
+      'UPDATE anggota SET nim = $1, jurusan = $2, angkatan = $3, kontak = $4, status_keanggotaan = $5 WHERE id_anggota = $6',
       [data.nim, data.jurusan, data.angkatan, data.kontak, data.status_keanggotaan, id],
     );
   });
@@ -101,8 +101,8 @@ async function remove(req, res) {
     const existing = await findAnggota(id, conn);
     if (!existing) throw notFound('Anggota tidak ditemukan');
     if (existing.jumlah_program > 0) throw conflict('Anggota memiliki data pendidikan sehingga tidak dapat dihapus');
-    await conn.query('DELETE FROM anggota WHERE id_anggota = ?', [id]);
-    await conn.query('DELETE FROM users WHERE id_user = ?', [existing.id_user]);
+    await conn.query('DELETE FROM anggota WHERE id_anggota = $1', [id]);
+    await conn.query('DELETE FROM users WHERE id_user = $1', [existing.id_user]);
   });
   return ok(res, null, 'Anggota berhasil dihapus');
 }

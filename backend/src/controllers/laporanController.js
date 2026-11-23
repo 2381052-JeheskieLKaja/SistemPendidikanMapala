@@ -9,8 +9,8 @@ const groupBy = (rows, key) => rows.reduce((acc, r) => ((acc[r[key]] ||= []).pus
 async function rekap(req, res) {
   const where = [];
   const params = [];
-  if (req.query.id_program) { where.push('pp.id_program = ?'); params.push(toId(req.query.id_program, 'ID program')); }
-  if (req.query.id_anggota) { where.push('pp.id_anggota = ?'); params.push(toId(req.query.id_anggota, 'ID anggota')); }
+  if (req.query.id_program) { params.push(toId(req.query.id_program, 'ID program')); where.push(`pp.id_program = $${params.length}`); }
+  if (req.query.id_anggota) { params.push(toId(req.query.id_anggota, 'ID anggota')); where.push(`pp.id_anggota = $${params.length}`); }
 
   const [peserta] = await pool.query(
     `SELECT pp.id_peserta, pp.id_program, pp.id_anggota, pp.tanggal_daftar, pp.status,
@@ -29,7 +29,7 @@ async function rekap(req, res) {
   const [absensi] = await pool.query(
     `SELECT ab.id_peserta, ab.status, ab.keterangan, j.tanggal, j.waktu, j.kegiatan, j.lokasi
        FROM absensi ab JOIN jadwal j ON j.id_jadwal = ab.id_jadwal
-      WHERE ab.id_peserta IN (?) ORDER BY j.tanggal, j.waktu`,
+      WHERE ab.id_peserta = ANY($1::int[]) ORDER BY j.tanggal, j.waktu`,
     [ids],
   );
   const [progres] = await pool.query(
@@ -38,13 +38,13 @@ async function rekap(req, res) {
        FROM peserta_pendidikan pp
        JOIN materi m ON m.id_program = pp.id_program
        LEFT JOIN progres_materi pm ON pm.id_peserta = pp.id_peserta AND pm.id_materi = m.id_materi
-      WHERE pp.id_peserta IN (?) ORDER BY m.kategori, m.tanggal_upload`,
+      WHERE pp.id_peserta = ANY($1::int[]) ORDER BY m.kategori, m.tanggal_upload`,
     [ids],
   );
   const [evaluasi] = await pool.query(
     `SELECT e.id_peserta, e.hasil_penilaian, e.catatan, e.tanggal_evaluasi, j.kegiatan, j.tanggal, pc.nama AS pencatat
        FROM evaluasi e JOIN jadwal j ON j.id_jadwal = e.id_jadwal JOIN users pc ON pc.id_user = e.id_pencatat
-      WHERE e.id_peserta IN (?) ORDER BY j.tanggal`,
+      WHERE e.id_peserta = ANY($1::int[]) ORDER BY j.tanggal`,
     [ids],
   );
 

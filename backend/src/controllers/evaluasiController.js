@@ -10,9 +10,9 @@ async function pesertaDenganEvaluasi(jadwal, conn = pool) {
        FROM peserta_pendidikan pp
        JOIN anggota an ON an.id_anggota = pp.id_anggota
        JOIN users u ON u.id_user = an.id_user
-       LEFT JOIN evaluasi e ON e.id_peserta = pp.id_peserta AND e.id_jadwal = ?
+       LEFT JOIN evaluasi e ON e.id_peserta = pp.id_peserta AND e.id_jadwal = $1
        LEFT JOIN users pc ON pc.id_user = e.id_pencatat
-      WHERE pp.id_program = ? ORDER BY u.nama`,
+      WHERE pp.id_program = $2 ORDER BY u.nama`,
     [jadwal.id_jadwal, jadwal.id_program],
   );
   return rows;
@@ -55,9 +55,12 @@ async function simpan(req, res) {
     for (const row of rows) {
       await conn.query(
         `INSERT INTO evaluasi (id_peserta, id_jadwal, id_pencatat, hasil_penilaian, catatan, tanggal_evaluasi)
-         VALUES (?, ?, ?, ?, ?, CURDATE())
-         ON DUPLICATE KEY UPDATE id_pencatat = VALUES(id_pencatat), hasil_penilaian = VALUES(hasil_penilaian),
-           catatan = VALUES(catatan), tanggal_evaluasi = VALUES(tanggal_evaluasi)`,
+         VALUES ($1, $2, $3, $4, $5, CURRENT_DATE)
+         ON CONFLICT (id_peserta, id_jadwal) DO UPDATE
+         SET id_pencatat = EXCLUDED.id_pencatat,
+             hasil_penilaian = EXCLUDED.hasil_penilaian,
+             catatan = EXCLUDED.catatan,
+             tanggal_evaluasi = EXCLUDED.tanggal_evaluasi`,
         row,
       );
     }

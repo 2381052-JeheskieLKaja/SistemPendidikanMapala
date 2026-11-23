@@ -6,21 +6,21 @@ const { hitungProgresSiswa } = require('./progresController');
 
 async function ringkasanPengelola() {
   const [perStatus] = await pool.query(
-    'SELECT status_keanggotaan, COUNT(*) AS jumlah FROM anggota GROUP BY status_keanggotaan');
+    'SELECT status_keanggotaan, COUNT(*)::int AS jumlah FROM anggota GROUP BY status_keanggotaan');
   const rincian = Object.fromEntries(STATUS_KEANGGOTAAN.map((s) => [s, 0]));
   perStatus.forEach((r) => { rincian[r.status_keanggotaan] = Number(r.jumlah); });
 
   // Program aktif: hari ini berada di antara tanggal_mulai dan tanggal_selesai.
   const [programAktif] = await pool.query(
     `SELECT p.id_program, p.nama_program, p.jenis, p.tanggal_mulai, p.tanggal_selesai,
-            (SELECT COUNT(*) FROM peserta_pendidikan pp WHERE pp.id_program = p.id_program) AS jumlah_peserta
+            (SELECT COUNT(*)::int FROM peserta_pendidikan pp WHERE pp.id_program = p.id_program) AS jumlah_peserta
        FROM program_pendidikan p
-      WHERE CURDATE() BETWEEN p.tanggal_mulai AND p.tanggal_selesai ORDER BY p.tanggal_mulai`,
+      WHERE CURRENT_DATE BETWEEN p.tanggal_mulai AND p.tanggal_selesai ORDER BY p.tanggal_mulai`,
   );
   const [jadwal] = await pool.query(
     `SELECT j.id_jadwal, j.id_program, j.tanggal, j.waktu, j.lokasi, j.kegiatan, p.nama_program
        FROM jadwal j JOIN program_pendidikan p ON p.id_program = j.id_program
-      WHERE j.tanggal >= CURDATE() ORDER BY j.tanggal, j.waktu LIMIT 5`,
+      WHERE j.tanggal >= CURRENT_DATE ORDER BY j.tanggal, j.waktu LIMIT 5`,
   );
   return {
     total_anggota: Object.values(rincian).reduce((a, b) => a + b, 0),
@@ -31,17 +31,17 @@ async function ringkasanPengelola() {
 }
 
 async function ringkasanSiswa(idUser) {
-  const [[user]] = await pool.query('SELECT nama FROM users WHERE id_user = ?', [idUser]);
+  const [[user]] = await pool.query('SELECT nama FROM users WHERE id_user = $1', [idUser]);
   const program = await getKeikutsertaan(idUser);
   const progres = await hitungProgresSiswa(idUser);
   const total = progres.reduce((a, p) => a + p.total_materi, 0);
   const diakses = progres.reduce((a, p) => a + p.diakses, 0);
 
   const [absensi] = await pool.query(
-    `SELECT ab.status, COUNT(*) AS jumlah FROM absensi ab
+    `SELECT ab.status, COUNT(*)::int AS jumlah FROM absensi ab
        JOIN peserta_pendidikan pp ON pp.id_peserta = ab.id_peserta
        JOIN anggota an ON an.id_anggota = pp.id_anggota
-      WHERE an.id_user = ? GROUP BY ab.status`,
+      WHERE an.id_user = $1 GROUP BY ab.status`,
     [idUser],
   );
   const kehadiran = { hadir: 0, izin: 0, sakit: 0, alpa: 0 };
@@ -53,7 +53,7 @@ async function ringkasanSiswa(idUser) {
        JOIN program_pendidikan p ON p.id_program = j.id_program
        JOIN peserta_pendidikan pp ON pp.id_program = j.id_program
        JOIN anggota an ON an.id_anggota = pp.id_anggota
-      WHERE an.id_user = ? AND j.tanggal >= CURDATE() ORDER BY j.tanggal, j.waktu LIMIT 5`,
+      WHERE an.id_user = $1 AND j.tanggal >= CURRENT_DATE ORDER BY j.tanggal, j.waktu LIMIT 5`,
     [idUser],
   );
 

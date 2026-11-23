@@ -54,7 +54,7 @@ test('TC-05 Admin mengubah status tahapan keanggotaan → status tersimpan', asy
     nama: 'Rina Kartika', email: 'rina@mapala.test', nim: '2581010', status_keanggotaan: 'siswa',
   });
   assert.equal(res.status, 200);
-  const [a] = await q('SELECT status_keanggotaan FROM anggota WHERE id_anggota = ?', [state.idAnggota]);
+  const [a] = await q('SELECT status_keanggotaan FROM anggota WHERE id_anggota = $1', [state.idAnggota]);
   assert.equal(a.status_keanggotaan, 'siswa');
 });
 
@@ -90,7 +90,7 @@ test('TC-11 Admin mendaftarkan siswa yang sudah terdaftar → ditolak dengan pes
   const res = await call('admin', 'post', '/api/peserta', { id_anggota: state.idAnggota, id_program: state.idProgram });
   assert.equal(res.status, 409);
   assert.match(res.body.message, /sudah terdaftar/);
-  const [{ n }] = await q('SELECT COUNT(*) n FROM peserta_pendidikan WHERE id_anggota = ? AND id_program = ?', [state.idAnggota, state.idProgram]);
+  const [{ n }] = await q('SELECT COUNT(*)::int n FROM peserta_pendidikan WHERE id_anggota = $1 AND id_program = $2', [state.idAnggota, state.idProgram]);
   assert.equal(n, 1);
 });
 
@@ -102,9 +102,9 @@ test('TC-08 Admin/Pengurus menambah materi + kategori → tersimpan dan siswa me
   assert.equal(res.body.data.jumlah_notifikasi, 1);
   state.idMateri = res.body.data.id_materi;
   const [rinaUser] = await q("SELECT id_user FROM users WHERE email = 'rina@mapala.test'");
-  const notif = await q('SELECT * FROM notifikasi WHERE id_materi = ? AND id_user = ?', [state.idMateri, rinaUser.id_user]);
+  const notif = await q('SELECT * FROM notifikasi WHERE id_materi = $1 AND id_user = $2', [state.idMateri, rinaUser.id_user]);
   assert.equal(notif.length, 1);
-  assert.equal(notif[0].status_baca, 0);
+  assert.equal(notif[0].status_baca, false);
 
   const res2 = await upload('pengurus', 'post', '/api/materi', { id_program: 1, judul: 'Navigasi Malam', kategori: 'Navigasi' });
   assert.equal(res2.status, 201);
@@ -130,7 +130,7 @@ test('TC-12 Pengurus menyimpan status kehadiran pada satu kegiatan → absensi t
   const res = await call('pengurus', 'post', '/api/absensi', { id_jadwal: state.idJadwal, data });
   assert.equal(res.status, 200);
   assert.equal(res.body.data.rekap.hadir, data.length);
-  const rows = await q('SELECT * FROM absensi WHERE id_jadwal = ?', [state.idJadwal]);
+  const rows = await q('SELECT * FROM absensi WHERE id_jadwal = $1', [state.idJadwal]);
   assert.equal(rows.length, data.length);
 });
 
@@ -139,7 +139,7 @@ test('TC-13 Pengurus menyimpan hasil penilaian pada satu kegiatan → hasil eval
   const data = form.body.data.peserta.map((p) => ({ id_peserta: p.id_peserta, hasil_penilaian: 'Teknik belay benar', catatan: 'Pertahankan' }));
   const res = await call('pengurus', 'post', '/api/evaluasi', { id_jadwal: state.idJadwal, data });
   assert.equal(res.status, 200);
-  const rows = await q('SELECT * FROM evaluasi WHERE id_jadwal = ?', [state.idJadwal]);
+  const rows = await q('SELECT * FROM evaluasi WHERE id_jadwal = $1', [state.idJadwal]);
   assert.equal(rows.length, 1);
   assert.equal(rows[0].id_pencatat, 2); // dari token Pengurus
 });
@@ -228,7 +228,7 @@ test('TC-A1 Endpoint terproteksi tanpa token / token rusak → 401', async () =>
 });
 
 test('TC-A2 Tambah anggota tidak lengkap / email dipakai → ditolak, tidak ada user baru', async () => {
-  const [{ n: sebelum }] = await q('SELECT COUNT(*) n FROM users');
+  const [{ n: sebelum }] = await q('SELECT COUNT(*)::int n FROM users');
   const kosong = await call('admin', 'post', '/api/anggota', { nama: '', email: 'x', status_keanggotaan: 'salah' });
   assert.equal(kosong.status, 400);
   assert.ok(kosong.body.errors.nama && kosong.body.errors.email && kosong.body.errors.status_keanggotaan);
@@ -236,16 +236,16 @@ test('TC-A2 Tambah anggota tidak lengkap / email dipakai → ditolak, tidak ada 
   assert.equal(ganda.status, 409);
   const nimGanda = await call('admin', 'post', '/api/anggota', { nama: 'Ganda', email: 'ganda@mapala.test', nim: '2381001', status_keanggotaan: 'siswa' });
   assert.equal(nimGanda.status, 409);
-  const [{ n: sesudah }] = await q('SELECT COUNT(*) n FROM users');
+  const [{ n: sesudah }] = await q('SELECT COUNT(*)::int n FROM users');
   assert.equal(sesudah, sebelum);
 });
 
 test('TC-A3 Pengurus menambah jadwal tidak lengkap → 400, data tidak tersimpan', async () => {
-  const [{ n: sebelum }] = await q('SELECT COUNT(*) n FROM jadwal');
+  const [{ n: sebelum }] = await q('SELECT COUNT(*)::int n FROM jadwal');
   const res = await call('pengurus', 'post', '/api/jadwal', { id_program: 1, tanggal: '', waktu: '25:00', lokasi: '', kegiatan: '' });
   assert.equal(res.status, 400);
   assert.ok(res.body.errors.tanggal && res.body.errors.waktu && res.body.errors.lokasi && res.body.errors.kegiatan);
-  const [{ n: sesudah }] = await q('SELECT COUNT(*) n FROM jadwal');
+  const [{ n: sesudah }] = await q('SELECT COUNT(*)::int n FROM jadwal');
   assert.equal(sesudah, sebelum);
 });
 
@@ -297,7 +297,7 @@ test('TC-A8 Tambah materi pada program yang belum punya peserta → tersimpan ta
   const res = await upload('admin', 'post', '/api/materi', { id_program: 3, judul: 'Teknik Mendayung', kategori: 'Arung Jeram' });
   assert.equal(res.status, 201);
   assert.equal(res.body.data.jumlah_notifikasi, 0);
-  assert.equal((await q('SELECT * FROM notifikasi WHERE id_materi = ?', [res.body.data.id_materi])).length, 0);
+  assert.equal((await q('SELECT * FROM notifikasi WHERE id_materi = $1', [res.body.data.id_materi])).length, 0);
 });
 
 test('TC-A9 Guest memanggil /api/publik/program → tidak ada data pribadi', async () => {
