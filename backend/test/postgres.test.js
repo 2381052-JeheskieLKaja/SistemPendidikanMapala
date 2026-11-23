@@ -164,10 +164,13 @@ test('Konfigurasi Vercel Services (vercel.json) dan koneksi Neon (DATABASE_URL +
   assert.equal(vercel.services?.backend?.root, 'backend');
   assert.equal(vercel.services?.backend?.framework, 'express');
   assert.equal(vercel.services?.backend?.entrypoint, 'src/app.js');
+  assert.match(vercel.services?.backend?.installCommand || '', /--workspaces=false/);
   assert.equal(vercel.services?.backend?.buildCommand, 'npm run db:reset');
 
   assert.equal(vercel.services?.frontend?.root, 'frontend');
   assert.equal(vercel.services?.frontend?.framework, 'vite');
+  assert.match(vercel.services?.frontend?.installCommand || '', /--workspaces=false/);
+  assert.match(vercel.services?.frontend?.installCommand || '', /--include=optional/);
   assert.equal(vercel.services?.frontend?.buildCommand, 'npm run build');
   assert.equal(vercel.services?.frontend?.outputDirectory, 'dist');
 
