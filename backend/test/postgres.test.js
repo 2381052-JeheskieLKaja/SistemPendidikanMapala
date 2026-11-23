@@ -152,19 +152,32 @@ test('Kode backend bebas sintaks MySQL & memakai driver/error code PostgreSQL', 
   assert.equal(envConfig.db.port, Number(process.env.DB_PORT || process.env.PGPORT || 5432));
 });
 
-test('Konfigurasi Vercel (vercel.json & api/index.js) dan koneksi Neon (DATABASE_URL + SSL) valid', () => {
+test('Konfigurasi Vercel Services (vercel.json) dan koneksi Neon (DATABASE_URL + SSL) valid', () => {
   const rootDir = path.resolve(__dirname, '../..');
   const vercel = JSON.parse(fs.readFileSync(path.join(rootDir, 'vercel.json'), 'utf8'));
 
-  assert.match(vercel.buildCommand, /npm --prefix backend run db:reset/);
-  assert.match(vercel.buildCommand, /npm --prefix frontend run build/);
-  assert.equal(vercel.outputDirectory, 'frontend/dist');
-  assert.ok(vercel.functions?.['api/index.js']?.includeFiles?.includes('backend/'));
-  assert.ok(vercel.rewrites.some((r) => r.source === '/api/(.*)' && r.destination === '/api/index.js'));
-  assert.ok(vercel.rewrites.some((r) => r.destination === '/index.html'));
+  // Di services mode, key build/runtime tidak boleh berada di top-level
+  for (const forbiddenTopKey of ['functions', 'installCommand', 'buildCommand', 'devCommand', 'ignoreCommand', 'outputDirectory', 'framework']) {
+    assert.equal(vercel[forbiddenTopKey], undefined, `Top-level ${forbiddenTopKey} tidak valid di Vercel services mode`);
+  }
 
-  const apiHandler = require(path.join(rootDir, 'api/index.js'));
-  assert.equal(typeof apiHandler, 'function');
+  assert.equal(vercel.services?.backend?.root, 'backend');
+  assert.equal(vercel.services?.backend?.framework, 'express');
+  assert.equal(vercel.services?.backend?.entrypoint, 'src/app.js');
+  assert.equal(vercel.services?.backend?.buildCommand, 'npm run db:reset');
+
+  assert.equal(vercel.services?.frontend?.root, 'frontend');
+  assert.equal(vercel.services?.frontend?.framework, 'vite');
+  assert.equal(vercel.services?.frontend?.buildCommand, 'npm run build');
+  assert.equal(vercel.services?.frontend?.outputDirectory, 'dist');
+
+  assert.deepEqual(vercel.rewrites, [
+    { source: '/api/(.*)', destination: { service: 'backend' } },
+    { source: '/(.*)', destination: { service: 'frontend' } },
+  ]);
+
+  const expressApp = require('../src/app');
+  assert.equal(typeof expressApp, 'function');
 
   // Simulasikan environment non-test dengan Neon DATABASE_URL
   const savedEnv = {
